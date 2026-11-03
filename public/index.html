@@ -352,6 +352,7 @@ lv:{
  unsaved:'Ir nesaglabātas izmaiņas', save_err:'Neizdevās saglabāt: {e}', items_n:'Pozīcijas: {n}', reset_demo:'Atjaunot demo katalogu'
 }};
 I18N.en={
+ change_pw:'Change password', cur_pw:'Current password', new_pw:'New password', new_pw2:'Repeat new password', pw_short:'Password must be at least 8 characters', pw_mismatch:'Passwords do not match', pw_changed:'Password changed', cur_pw_wrong:'Current password is incorrect',
  email:'E-mail', logout:'Log out', not_admin:'This user is not an administrator', tab_leads:'Requests', tab_catalog:'Catalogue & prices', refresh:'Refresh',
  leads_empty:'No requests yet. A request appears when a client downloads the estimate PDF.', l_date:'Date', l_client:'Client', l_object:'Site', l_total:'Total incl. VAT', l_status:'Status',
  st_new:'New', st_done:'Done', l_open:'Open', l_close:'Close', l_delete_q:'Delete this request?', l_list:'List price', l_list_sum:'Total at list price', l_margin:'Difference vs price list (materials)',
@@ -431,6 +432,7 @@ I18N.en={
  g_all:'All', g_vertikalais:'Vertical', g_horizontalais:'Horizontal', g_griestu:'Ceiling', g_sienas:'Wall', tool_recup:'Heat recovery unit', move_recup:'Move the unit', auto:'auto'
 };
 Object.assign(I18N.ru,{
+ change_pw:'Сменить пароль', cur_pw:'Текущий пароль', new_pw:'Новый пароль', new_pw2:'Повторите новый пароль', pw_short:'Пароль должен быть не короче 8 символов', pw_mismatch:'Пароли не совпадают', pw_changed:'Пароль изменён', cur_pw_wrong:'Текущий пароль неверный',
  email:'E-mail', logout:'Выйти', not_admin:'У этого пользователя нет прав администратора', tab_leads:'Заявки', tab_catalog:'Каталог и цены', refresh:'Обновить',
  leads_empty:'Заявок пока нет. Заявка появляется, когда клиент скачивает PDF сметы.', l_date:'Дата', l_client:'Клиент', l_object:'Объект', l_total:'Сумма с PVN', l_status:'Статус',
  st_new:'Новая', st_done:'Обработана', l_open:'Открыть', l_close:'Закрыть', l_delete_q:'Удалить заявку?', l_list:'Цена прайса', l_list_sum:'Сумма по прайсу', l_margin:'Разница с прайсом (материалы)',
@@ -447,6 +449,7 @@ Object.assign(I18N.ru,{
  g_all:'Все', g_vertikalais:'Вертикальные', g_horizontalais:'Горизонтальные', g_griestu:'Потолочные', g_sienas:'Настенные', tool_recup:'Рекуператор', move_recup:'Переместить рекуператор', auto:'авто'
 });
 Object.assign(I18N.lv,{
+ change_pw:'Mainīt paroli', cur_pw:'Pašreizējā parole', new_pw:'Jaunā parole', new_pw2:'Atkārtojiet jauno paroli', pw_short:'Parolei jābūt vismaz 8 simbolus garai', pw_mismatch:'Paroles nesakrīt', pw_changed:'Parole nomainīta', cur_pw_wrong:'Pašreizējā parole nav pareiza',
  email:'E-pasts', logout:'Iziet', not_admin:'Šim lietotājam nav administratora tiesību', tab_leads:'Pieteikumi', tab_catalog:'Katalogs un cenas', refresh:'Atjaunot',
  leads_empty:'Pieteikumu vēl nav. Pieteikums parādās, kad klients lejupielādē tāmes PDF.', l_date:'Datums', l_client:'Klients', l_object:'Objekts', l_total:'Summa ar PVN', l_status:'Statuss',
  st_new:'Jauns', st_done:'Apstrādāts', l_open:'Atvērt', l_close:'Aizvērt', l_delete_q:'Dzēst pieteikumu?', l_list:'Cenrāža cena', l_list_sum:'Summa pēc cenrāža', l_margin:'Starpība pret cenrādi (materiāli)',
@@ -537,7 +540,7 @@ let sess=null;
 async function sbAuth(grant,body){
   const r=await fetch(SB.url+'/auth/v1/token?grant_type='+grant,{method:'POST',headers:{apikey:SB.key,'Content-Type':'application/json'},body:JSON.stringify(body)});
   const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error_description||j.msg||j.message||('HTTP '+r.status)),{status:r.status});
-  sess={access_token:j.access_token,refresh_token:j.refresh_token,expires_at:Date.now()+(j.expires_in||3600)*1000};
+  sess={access_token:j.access_token,refresh_token:j.refresh_token,expires_at:Date.now()+(j.expires_in||3600)*1000,email:(j.user&&j.user.email)||body.email||(sess&&sess.email)||''};
   try{sessionStorage.setItem('recu_sb',JSON.stringify(sess))}catch(e){}return sess}
 async function sbToken(){
   if(!sess){try{sess=JSON.parse(sessionStorage.getItem('recu_sb')||'null')}catch(e){}}
@@ -1233,7 +1236,7 @@ function admHeader(){
   const tabs=serverMode?`<div class="seg">${['leads','catalog'].map(k=>`<button data-act="admTab" data-t="${k}" class="${adm.tab===k?'on':''}">${esc(t('tab_'+k))}</button>`).join('')}</div>`:'';
   const right=adm.tab==='catalog'||!serverMode?`${adm.dirty?`<span class="tag warn">${esc(t('unsaved'))}</span>`:''}<button class="btn pri" data-act="admSave">${esc(t('save_all'))}</button>`:`<button class="btn" data-act="admRefresh">↻ ${esc(t('refresh'))}</button>`;
   return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap"><h2 style="font-size:20px;margin:0">${esc(t('adm_title'))}</h2>
-    <a class="lnk" href="#">${esc(t('back'))}</a>${tabs}<span class="hspace"></span>${right}${serverMode?`<button class="btn sm" data-act="admLogout">${esc(t('logout'))}</button>`:''}</div>`}
+    <a class="lnk" href="#">${esc(t('back'))}</a>${tabs}<span class="hspace"></span>${right}${serverMode?`<button class="btn sm" data-act="admPw">🔑 ${esc(t('change_pw'))}</button><button class="btn sm" data-act="admLogout">${esc(t('logout'))}</button>`:''}</div>`}
 function renderAdmin(){
   const el=$('#adminView');
   if(serverMode&&!adm.authed){
@@ -1322,6 +1325,19 @@ function markDirty(){if(!adm.dirty){adm.dirty=true;const b=document.querySelecto
 const ADM={
   admTab:b=>{adm.tab=b.dataset.t;renderAdmin()},
   admRefresh:()=>{adm.leads=null;adm.plans={};renderAdmin()},
+  admPw:async()=>{
+    const r=await modal({title:t('change_pw'),okText:t('change_pw'),html:`<label class="fld"><span>${esc(t('cur_pw'))}</span><input type="password" name="cur" autocomplete="current-password"></label>
+      <label class="fld"><span>${esc(t('new_pw'))}</span><input type="password" name="pw1" autocomplete="new-password"></label>
+      <label class="fld"><span>${esc(t('new_pw2'))}</span><input type="password" name="pw2" autocomplete="new-password"></label>`});
+    if(!r)return;
+    if(r.pw1.length<8){toast(t('pw_short'),true);return}
+    if(r.pw1!==r.pw2){toast(t('pw_mismatch'),true);return}
+    try{let email=sess&&sess.email;
+      if(!email){const u=await sb('/auth/v1/user',{auth:true});email=u&&u.email}
+      try{await sbAuth('password',{email,password:r.cur})}catch(e){toast(t('cur_pw_wrong'),true);return}
+      await sb('/auth/v1/user',{method:'PUT',auth:true,body:{password:r.pw1}});
+      toast(t('pw_changed'))}
+    catch(err){if(err.status===401)return admErr(err);toast(String(err.message||err),true)}},
   admLogout:()=>{sbLogout();adm.authed=false;adm.checked=true;adm.data=null;adm.leads=null;renderAdmin()},
   leadOpen:b=>{const id=b.dataset.id;adm.open[id]=!adm.open[id];
     if(adm.open[id]&&!adm.plans[id]){adm.plans[id]='loading';sb('/rest/v1/calc_leads?id=eq.'+encodeURIComponent(id)+'&select=plans',{auth:true}).then(r=>{adm.plans[id]=(r&&r[0]&&r[0].plans)||[];renderAdmin()}).catch(e=>{delete adm.plans[id];admErr(e)})}
