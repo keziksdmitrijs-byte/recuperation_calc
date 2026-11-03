@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rekuperācijas kalkulators</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#2563eb;--red:#dc2626;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--bg:#f1f5f9;--acc:#0f766e;--accl:#ccfbf1;--warn:#b45309;--warnbg:#fffbeb;--ok:#15803d}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+header{display:flex;align-items:center;gap:14px;padding:8px 14px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;white-space:nowrap}
+.brand .logo{width:26px;height:26px;border-radius:7px;background:conic-gradient(var(--blue) 0 50%,var(--red) 0 100%);display:grid;place-items:center;color:#fff;font-size:13px}
+.steps{display:flex;gap:2px;background:var(--bg);padding:3px;border-radius:9px;flex-wrap:wrap}
+.steps button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-weight:500;color:var(--mut);white-space:nowrap}
+.steps button .n{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#cbd5e1;color:#fff;font-size:11px;margin-right:6px}
+.steps button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.steps button.on .n{background:var(--acc)}
+.steps button.done .n{background:var(--ok)}
+.hspace{flex:1}
+.lang{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.lang button{border:0;background:#fff;padding:5px 9px;font-weight:600;font-size:12px;color:var(--mut)}
+.lang button.on{background:var(--ink);color:#fff}
+.lnk{color:var(--mut);text-decoration:none;font-size:13px}
+.lnk:hover{color:var(--ink)}
+main{flex:1;display:flex;min-height:0}
+#side{width:350px;flex:none;overflow:auto;background:#fff;border-right:1px solid var(--line);padding:16px 16px 24px}
+#stage{flex:1;position:relative;display:flex;flex-direction:column;min-width:0}
+#floorTabs{display:flex;gap:4px;padding:6px 10px;background:#fff;border-bottom:1px solid var(--line);overflow-x:auto}
+#floorTabs button{border:1px solid var(--line);background:#fff;padding:4px 12px;border-radius:999px;font-size:13px;white-space:nowrap}
+#floorTabs button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+#canvasWrap{flex:1;position:relative;overflow:hidden;background:#e2e8f0;background-image:radial-gradient(#cbd5e1 1px,transparent 1px);background-size:18px 18px}
+svg#plan{position:absolute;inset:0;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}
+svg#plan.t-select{cursor:default}
+svg#plan.t-draw{cursor:crosshair}
+svg#plan.panning{cursor:grabbing}
+#empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--mut);padding:24px}
+#empty .box{background:#fff;border:2px dashed #cbd5e1;border-radius:14px;padding:32px 40px;max-width:420px}
+#empty .box b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+#canvasWrap.drop #empty .box,#canvasWrap.drop{outline:3px solid var(--acc);outline-offset:-3px}
+#zoomBar{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:4px}
+#zoomBar button{width:34px;height:34px;border:1px solid var(--line);background:#fff;border-radius:8px;font-size:16px;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+#zoomBar button:disabled{opacity:.4;cursor:default}
+#hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(15,23,42,.9);color:#fff;padding:7px 14px;border-radius:9px;font-size:13px;max-width:min(680px,80%);text-align:center;pointer-events:none}
+#hint:empty{display:none}
+#props{position:absolute;left:12px;bottom:12px;width:300px;background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(15,23,42,.16);padding:12px 14px;font-size:13px}
+#props:empty{display:none}
+#props h4{margin:0 0 8px;font-size:13px;display:flex;align-items:center;gap:8px}
+#props .row{display:flex;justify-content:space-between;gap:8px;margin:5px 0;align-items:center}
+#props .row span:first-child{color:var(--mut)}
+#props select,#props input{max-width:170px}
+#estimateView{flex:1;overflow:auto;padding:24px 28px;display:none}
+body.est #estimateView{display:block}
+body.est #stage{display:none}
+h2{font-size:17px;margin:0 0 4px}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:20px 0 8px}
+p.hint{color:var(--mut);margin:4px 0 12px;font-size:13px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;padding:7px 12px;border-radius:8px;font-weight:500;font-size:13px}
+.btn:hover{border-color:#94a3b8}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.pri:hover{background:#115e59}
+.btn.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.sm{padding:4px 8px;font-size:12px}
+.btn.danger{color:var(--red)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tool{display:flex;align-items:center;gap:8px;justify-content:flex-start;text-align:left}
+.sw{width:14px;height:14px;border-radius:4px;flex:none}
+.sw.c{border-radius:50%}
+label.fld{display:block;margin:10px 0}
+label.fld span{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+input[type=text],input[type=number],input[type=email],input[type=tel],input[type=password],select{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:#fff}
+input:focus,select:focus{outline:2px solid var(--accl);border-color:var(--acc)}
+.card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0;background:#fff}
+.floorRow{display:flex;align-items:center;gap:8px}
+.floorRow.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--accl)}
+.floorRow .nm{flex:1;font-weight:600;cursor:pointer}
+.floorRow .st{font-size:12px;color:var(--mut)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--bg);color:var(--mut);font-weight:600}
+.tag.ok{background:#dcfce7;color:var(--ok)}
+.tag.bad{background:#fee2e2;color:var(--red)}
+.tag.warn{background:var(--warnbg);color:var(--warn)}
+.recup{display:flex;gap:10px;align-items:center;cursor:pointer;transition:.1s}
+.recup:hover{border-color:#94a3b8}
+.recup.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--accl)}
+.recup.dim{background:#334155;color:#cbd5e1;border-color:#334155}
+.recup.dim .mut{color:#94a3b8}
+.recup .nm{font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:500}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.recup .pr{margin-left:auto;font-weight:600;white-space:nowrap}
+.mut{color:var(--mut)}
+.sum{background:var(--bg);border-radius:10px;padding:10px 12px;margin-top:18px;font-size:13px}
+.sum .row{display:flex;justify-content:space-between;gap:10px;margin:3px 0}
+.sum .row b{font-weight:600}
+.chk{border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px;border:1px solid var(--line)}
+.chk.ok{border-color:#bbf7d0;background:#f0fdf4}
+.chk.bad{border-color:#fecaca;background:#fef2f2}
+.chk .t{font-weight:600;display:flex;align-items:center;gap:6px}
+.warns{background:var(--warnbg);border:1px solid #fde68a;border-radius:10px;padding:8px 12px;margin:12px 0;font-size:13px;color:#78350f}
+.warns ul{margin:4px 0 0;padding-left:18px}
+.nav{display:flex;justify-content:space-between;margin-top:18px;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:5px 12px;font-weight:600;font-size:13px}
+.seg button.on{background:var(--ink);color:#fff}
+table.est{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;font-size:13px}
+table.est th{text-align:left;font-weight:600;color:var(--mut);font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line);background:#f8fafc}
+table.est td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+table.est td.n,table.est th.n{text-align:right;white-space:nowrap}
+table.est tr.grp td{background:#f8fafc;font-weight:600;color:var(--ink)}
+table.est tr.tot td{font-weight:600;border-bottom:0}
+table.est tr.grand td{font-weight:700;font-size:15px;border-top:2px solid var(--ink)}
+.estWrap{max-width:980px;margin:0 auto}
+.estHead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0 16px}
+.kpi{background:#fff;border-radius:10px;padding:10px 12px;border:1px solid var(--line)}
+.kpi .l{font-size:12px;color:var(--mut)}
+.kpi .v{font-size:17px;font-weight:700}
+.demo{background:#fef3c7;color:#92400e;font-size:12px;padding:3px 9px;border-radius:999px;font-weight:600}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+#toast.show{opacity:1}
+#toast.err{background:var(--red)}
+.modalBg{position:fixed;inset:0;background:rgba(15,23,42,.45);display:grid;place-items:center;z-index:90;padding:16px}
+.modal{background:#fff;border-radius:14px;padding:18px 20px;width:min(420px,100%);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal h3{margin:0 0 10px;font-size:16px;text-transform:none;letter-spacing:0;color:var(--ink)}
+.modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+#busy{position:fixed;inset:0;background:rgba(255,255,255,.7);display:none;place-items:center;z-index:95;font-weight:600}
+#busy.show{display:grid}
+/* admin */
+#adminView{display:none;flex:1;overflow:auto;padding:24px}
+body.admin #adminView{display:block}
+body.admin main{display:none}
+body.admin .steps{visibility:hidden}
+.admWrap{max-width:1200px;margin:0 auto}
+.admWrap .card{padding:16px}
+.setGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 16px}
+table.cat{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
+table.cat th{text-align:left;font-size:11px;color:var(--mut);font-weight:600;padding:6px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.cat td{padding:3px 4px;border-bottom:1px solid #f1f5f9}
+table.cat input,table.cat select{padding:4px 6px;font-size:13px}
+table.cat input.off{background:#f8fafc;color:#cbd5e1;border-color:#f1f5f9}
+table.cat td.w-type{width:150px}
+table.cat td.w-num{width:90px}
+table.cat td.w-kind{width:110px}
+.admBar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+@media (max-width:860px){
+  main{flex-direction:column-reverse}
+  #side{width:100%;height:44vh;border-right:0;border-top:1px solid var(--line)}
+  #props{width:auto;right:12px}
+  .steps button{padding:5px 7px}
+  .steps button .lbl{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">⇅</div><span data-i18n="app_title"></span></div>
+  <nav class="steps" id="steps"></nav>
+  <div class="hspace"></div>
+  <span id="demoBadge"></span>
+  <div class="lang" id="langSw"><button data-lang="lv">LV</button><button data-lang="en">EN</button><button data-lang="ru">RU</button></div>
+  <a class="lnk" id="adminLink" href="#admin" data-i18n="admin"></a>
+</header>
+<main>
+  <aside id="side"></aside>
+  <section id="stage">
+    <div id="floorTabs"></div>
+    <div id="canvasWrap">
+      <svg id="plan" class="t-select" xmlns="http://www.w3.org/2000/svg">
+        <g id="vp"><image id="planImg" href="" x="0" y="0"/><g id="overlay"></g><g id="draftG" pointer-events="none"></g></g>
+      </svg>
+      <div id="empty"><div class="box"><b data-i18n="no_plan"></b><span data-i18n="drop_hint"></span><br><br><button class="btn pri" data-act="upload" data-i18n="upload_plan"></button></div></div>
+      <div id="hint"></div>
+      <div id="zoomBar">
+        <button data-act="zoomIn" title="+">+</button>
+        <button data-act="zoomOut" title="−">−</button>
+        <button data-act="fit" data-i18n-title="fit">⤢</button>
+        <button data-act="undo" data-i18n-title="undo">↶</button>
+      </div>
+      <div id="props"></div>
+    </div>
+  </section>
+  <section id="estimateView"></section>
+</main>
+<section id="adminView"></section>
+<input type="file" id="fileIn" accept="image/*,.pdf,application/pdf" hidden>
+<input type="file" id="projIn" accept=".json,application/json" hidden>
+<input type="file" id="catIn" accept=".csv,.xlsx,.xls" hidden>
+<div id="toast"></div>
+<div id="busy"><span id="busyTxt"></span></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   Rekuperācijas kalkulators / Калькулятор рекуперации
+   ===================================================================== */
+
+// ---------------------------------------------------------------- i18n
+const I18N = {
+ru:{
+ app_title:'Калькулятор рекуперации', admin:'Админ',
+ s1:'План', s2:'Масштаб и площадь', s3:'Рекуператор', s4:'Разводка', s5:'Смета',
+ next:'Далее →', prev:'← Назад',
+ floors:'Этажи', floor_n:'Этаж {n}', add_floor:'+ Добавить этаж', upload_plan:'Загрузить план', replace_plan:'Заменить план',
+ rename:'Переименовать', del:'Удалить', plan_hint:'Загрузите план каждого этажа (JPG, PNG или PDF). Файл можно просто перетащить в окно плана.',
+ no_plan:'Загрузите план этажа', drop_hint:'JPG, PNG или PDF — можно перетащить файл сюда', plan_ok:'план загружен', plan_none:'нет плана',
+ pdf_pages:'В PDF {n} стр. Какую страницу использовать?', pdf_page:'Страница', loading:'Загрузка…',
+ project:'Проект', new_project:'Новый проект', open_project:'Открыть файл проекта', save_project:'Сохранить файл проекта',
+ autosave:'Проект автоматически сохраняется в этом браузере.',
+ confirm_new:'Начать новый проект? Текущий проект будет удалён из браузера.', confirm_del_floor:'Удалить этаж со всеми объектами на нём?',
+ floor_name:'Название этажа', replace_q:'Заменить план? Нарисованные объекты останутся, но масштаб нужно будет задать заново.',
+ scale_t:'Масштаб', scale_hint:'Нажмите «Указать стену», отметьте на плане два конца любой стены и введите её длину.',
+ scale_btn:'Указать стену', scale_ok:'Задан: стена {m} м', scale_none:'Масштаб не задан', wall_len:'Длина стены, м',
+ area_t:'Площадь', area_hint:'Обведите контур дома (или отдельных помещений) по углам. Чтобы замкнуть контур — нажмите на первую точку или Enter.',
+ area_btn:'Обвести контур', contour:'Контур {n}', area_floor:'Площадь этажа', area_total:'Площадь по контурам', area_manual:'Или введите площадь вручную, м²',
+ height:'Высота потолков, м', volume:'Объём', req_air:'Нужный воздухообмен', ach_note:'{ach} раз/ч',
+ recup_hint:'Модели, у которых максимальный расход меньше нужного, показаны тёмными — выбрать их можно, но производительности не хватит.',
+ place_recup:'Поставить рекуператор на план', recup_placed:'Рекуператор стоит на плане', airflow:'Расход', too_small:'мало',
+ no_items:'В каталоге нет позиций этого типа',
+ tools:'Инструменты', tool_select:'Выбор / перемещение', collectors:'Коллекторы', col_supply:'Коллектор притока', col_extract:'Коллектор вытяжки',
+ diffusers:'Диффузоры', diff_supply:'Приток', diff_extract:'Вытяжка', riser:'Стояк с другого этажа', pipes:'Гибкие трубы (в доме)', flex:'Нарисовать трубу',
+ rigid_t:'Жёсткие трубы (улица / рекуператор)', rigid:'Нарисовать жёсткую трубу', diameter:'Диаметр', rigid_kind:'Назначение',
+ rk_intake:'Забор с улицы', rk_exhaust:'Выброс на улицу', rk_internal:'Рекуператор → коллектор',
+ h_select:'Перетаскивайте объекты и точки труб. Колесо мыши — масштаб, перетаскивание пустого места — сдвиг плана.',
+ h_place:'Нажмите на план, чтобы поставить. Esc — закончить.',
+ h_flex:'Начните на коллекторе (или стояке), ставьте точки поворота и закончите на диффузоре. Shift — прямые углы, Backspace — убрать точку, Esc — отмена.',
+ h_rigid:'Начните у рекуператора и нажмите у наружной стены (или за контуром дома): труба с углами 90° построится сама и закончится на стене решёткой UVLA. Клик внутри дома — промежуточная точка. Без контура дома — закончите двойным щелчком или Enter.',
+ h_scale:'Отметьте два конца стены.', h_area:'Ставьте точки по контуру. Нажмите на первую точку или Enter, чтобы замкнуть. Backspace — убрать точку.',
+ h_recup:'Нажмите на план, чтобы поставить рекуператор.',
+ err_start_col:'Труба должна начинаться на коллекторе или стояке', err_side:'Тип диффузора не совпадает с коллектором (приток/вытяжка)',
+ err_start_recup:'Жёсткая труба начинается у рекуператора. Сначала поставьте его на план (шаг «Рекуператор»).',
+ err_end_col:'Эта труба должна заканчиваться на коллекторе', err_riser:'Сначала привяжите стояк к коллектору (выберите стояк)',
+ err_has_routes:'Сначала удалите подключённые трубы', err_noimg:'Сначала загрузите план этажа', err_short:'Нужно минимум две точки',
+ checks:'Проверка труб', supply:'Приток', extract:'Вытяжка', need:'нужно ≥ {v} м³/ч', min_pipes:'Минимум: {a}×Ø75 или {b}×Ø90 (или комбинация)',
+ props:'Свойства', model:'Модель', connected:'Подключено труб', length:'Длина', elbows:'Повороты', link_col:'Коллектор', side:'Тип',
+ plenum:'Коллектор диффузора', area:'Площадь', del_sel:'Удалить', n_outlets:'выходов', caps:'Заглушек', not_linked:'— не выбран —',
+ recuperator:'Рекуператор', collector:'Коллектор', diffuser:'Диффузор', riser_o:'Стояк', route_flex:'Гибкая труба', route_rigid:'Жёсткая труба',
+ client_t:'Данные клиента (для PDF)', c_name:'Имя', c_phone:'Телефон', c_email:'E-mail', c_address:'Адрес объекта',
+ extras_t:'Дополнительно (по желанию)', extras_hint:'Глушители и другие позиции можно добавить в смету.',
+ pdf_btn:'Скачать PDF', pdf_making:'Готовлю PDF…', pdf_done:'PDF готов',
+ est_title:'Смета системы рекуперации', col_item:'Позиция', col_qty:'Кол-во', col_unit:'Ед.', col_price:'Цена', col_sum:'Сумма',
+ materials:'Материалы', labor:'Монтаж', mat_total:'Материалы итого', lab_total:'Монтаж итого', subtotal:'Итого без PVN', vat:'PVN {v}%', total:'Итого с PVN',
+ u_pcs:'шт.', u_coil:'бухта', u_m:'м', u_set:'компл.', m3h:'м³/ч', m2:'м²', m3:'м³', mm:'м',
+ lab_flex:'Монтаж гибких труб', lab_recup:'Подключение рекуператора', lab_out:'Вывод труб наружу',
+ t_recuperator:'Рекуператор', t_collector:'Коллектор', t_plenum:'Коллектор диффузора', t_diffuser:'Диффузор', t_flex_pipe:'Гибкая труба',
+ t_rigid_pipe:'Жёсткая труба', t_elbow:'Поворот жёсткой трубы', t_grille:'Наружная решётка', t_cap:'Заглушка', t_ring:'Кольцо уплотнения',
+ t_silencer:'Глушитель', t_accessory:'Дополнительно',
+ warnings:'Замечания', w_no_recup:'Рекуператор не выбран', w_recup_small:'Расход рекуператора {a} м³/ч меньше нужного {b} м³/ч',
+ w_side_low:'{side}: трубы дают {cap} м³/ч — меньше мощности рекуператора {need} м³/ч', w_no_area:'Площадь не задана',
+ w_noscale:'{floor}: не задан масштаб — длины труб не посчитаны', w_diff_free:'Диффузоров без труб: {n}',
+ w_col_empty:'Коллекторов без труб: {n} (не включены в смету)', w_missing:'В каталоге нет: {what}',
+ w_col_multi:'Нет коллектора на {n} выходов — посчитано {c} шт. «{name}»', w_plenum_mixed:'К одному диффузору подходят трубы разного диаметра',
+ w_plenum_big:'Нет коллектора диффузора на {n} подключений Ø{d}', w_riser:'Стояк не привязан к коллектору', w_no_outside:'Не нарисованы трубы забора и выброса с улицы',
+ w_recup_unplaced:'Рекуператор не поставлен на план', w_ok:'Замечаний нет',
+ kpi_area:'Площадь', kpi_vol:'Объём', kpi_air:'Нужный расход', kpi_recup:'Рекуператор',
+ demo_badge:'Демо-каталог: цены условные', date:'Дата', legend:'Обозначения', page:'стр.',
+ undo:'Отменить', fit:'Вписать план', ok:'OK', cancel:'Отмена', yes:'Да', saved:'Сохранено',
+ diffuser_any:'любой', kind_supply:'приток', kind_extract:'вытяжка', kind_any:'любой', universal:'универсальный',
+ // admin
+ adm_title:'Администрирование', password:'Пароль', login:'Войти', wrong_pw:'Неверный пароль', back:'← К калькулятору',
+ settings:'Настройки и цены монтажа', catalog:'Каталог товаров', prices_note:'Все цены вводятся без PVN.',
+ s_vat:'PVN, %', s_reserve:'Запас длины труб, %', s_ach:'Кратность воздухообмена, раз/ч', s_cap75:'Пропускная способность Ø75, м³/ч',
+ s_cap90:'Пропускная способность Ø90, м³/ч', s_lab_flex:'Монтаж гибкой трубы, € за метр', s_lab_recup:'Подключение рекуператора, €',
+ s_lab_out:'Вывод труб наружу, € за вывод', s_rings:'Колец уплотнения на одну трубу',
+ filter_all:'Все типы', add_item:'+ Добавить позицию', import:'Импорт CSV / Excel', export:'Экспорт в Excel', save_all:'Сохранить изменения',
+ import_mode:'Как импортировать {n} позиций?', import_replace:'Заменить весь каталог', import_append:'Добавить к каталогу', imported:'Импортировано позиций: {n}',
+ demo_save:'Демо-режим: сервер не найден, изменения сохраняются только в этом браузере.', server_save:'Изменения сохраняются на сервере и видны всем клиентам.',
+ f_type:'Тип', f_sku:'Артикул', f_name:'Название', f_diameter:'Ø, мм', f_airflow:'Расход, м³/ч', f_outlets:'Выходов', f_length:'Длина, м', f_kind:'Назначение', f_price:'Цена, €',
+ adm_help:'Поля, которые не нужны для типа, затенены. Коллектор с Ø 0 — универсальный (75 и 90). Для гибкой трубы «Длина» — длина бухты, для жёсткой — длина одной трубы, цена — за бухту / штуку.',
+ unsaved:'Есть несохранённые изменения', save_err:'Не удалось сохранить: {e}', items_n:'Позиций: {n}', reset_demo:'Сбросить к демо-каталогу'
+},
+lv:{
+ app_title:'Rekuperācijas kalkulators', admin:'Admin',
+ s1:'Plāns', s2:'Mērogs un platība', s3:'Rekuperators', s4:'Sadale', s5:'Tāme',
+ next:'Tālāk →', prev:'← Atpakaļ',
+ floors:'Stāvi', floor_n:'{n}. stāvs', add_floor:'+ Pievienot stāvu', upload_plan:'Augšupielādēt plānu', replace_plan:'Aizstāt plānu',
+ rename:'Pārdēvēt', del:'Dzēst', plan_hint:'Augšupielādējiet katra stāva plānu (JPG, PNG vai PDF). Failu var vienkārši ievilkt plāna logā.',
+ no_plan:'Augšupielādējiet stāva plānu', drop_hint:'JPG, PNG vai PDF — failu var ievilkt šeit', plan_ok:'plāns ielādēts', plan_none:'nav plāna',
+ pdf_pages:'PDF failā ir {n} lpp. Kuru lapu izmantot?', pdf_page:'Lapa', loading:'Ielādē…',
+ project:'Projekts', new_project:'Jauns projekts', open_project:'Atvērt projekta failu', save_project:'Saglabāt projekta failu',
+ autosave:'Projekts tiek automātiski saglabāts šajā pārlūkā.',
+ confirm_new:'Sākt jaunu projektu? Pašreizējais projekts tiks dzēsts no pārlūka.', confirm_del_floor:'Dzēst stāvu ar visiem tā objektiem?',
+ floor_name:'Stāva nosaukums', replace_q:'Aizstāt plānu? Uzzīmētie objekti paliks, bet mērogs būs jāiestata no jauna.',
+ scale_t:'Mērogs', scale_hint:'Nospiediet «Norādīt sienu», atzīmējiet plānā jebkuras sienas abus galus un ievadiet tās garumu.',
+ scale_btn:'Norādīt sienu', scale_ok:'Iestatīts: siena {m} m', scale_none:'Mērogs nav iestatīts', wall_len:'Sienas garums, m',
+ area_t:'Platība', area_hint:'Apvelciet mājas (vai atsevišķu telpu) kontūru pa stūriem. Lai noslēgtu kontūru, uzklikšķiniet uz pirmā punkta vai nospiediet Enter.',
+ area_btn:'Apvilkt kontūru', contour:'Kontūra {n}', area_floor:'Stāva platība', area_total:'Platība pēc kontūrām', area_manual:'Vai ievadiet platību manuāli, m²',
+ height:'Griestu augstums, m', volume:'Tilpums', req_air:'Nepieciešamā gaisa apmaiņa', ach_note:'{ach} reizes/h',
+ recup_hint:'Modeļi, kuru maksimālā plūsma ir mazāka par nepieciešamo, ir tumšāki — tos var izvēlēties, taču jaudas nepietiks.',
+ place_recup:'Novietot rekuperatoru plānā', recup_placed:'Rekuperators novietots plānā', airflow:'Plūsma', too_small:'par maz',
+ no_items:'Katalogā nav šāda veida pozīciju',
+ tools:'Rīki', tool_select:'Atlasīt / pārvietot', collectors:'Kolektori', col_supply:'Pieplūdes kolektors', col_extract:'Nosūces kolektors',
+ diffusers:'Difuzori', diff_supply:'Pieplūde', diff_extract:'Nosūce', riser:'Stāvvads no cita stāva', pipes:'Elastīgās caurules (mājā)', flex:'Zīmēt cauruli',
+ rigid_t:'Cietās caurules (ārā / rekuperators)', rigid:'Zīmēt cieto cauruli', diameter:'Diametrs', rigid_kind:'Mērķis',
+ rk_intake:'Gaisa ņemšana no ārpuses', rk_exhaust:'Izvade uz āru', rk_internal:'Rekuperators → kolektors',
+ h_select:'Velciet objektus un cauruļu punktus. Peles ritenis — tālummaiņa, velkot tukšu vietu — plāna pārvietošana.',
+ h_place:'Uzklikšķiniet plānā, lai novietotu. Esc — beigt.',
+ h_flex:'Sāciet pie kolektora (vai stāvvada), lieciet pagrieziena punktus un beidziet pie difuzora. Shift — taisni leņķi, Backspace — noņemt punktu, Esc — atcelt.',
+ h_rigid:'Sāciet pie rekuperatora un uzklikšķiniet pie ārsienas (vai ārpus mājas kontūras): caurule ar 90° līkumiem izveidosies automātiski un beigsies pie sienas ar resti UVLA. Klikšķis mājas iekšpusē — starppunkts. Bez mājas kontūras — beidziet ar dubultklikšķi vai Enter.',
+ h_scale:'Atzīmējiet sienas abus galus.', h_area:'Lieciet punktus pa kontūru. Uzklikšķiniet uz pirmā punkta vai nospiediet Enter, lai noslēgtu. Backspace — noņemt punktu.',
+ h_recup:'Uzklikšķiniet plānā, lai novietotu rekuperatoru.',
+ err_start_col:'Caurulei jāsākas pie kolektora vai stāvvada', err_side:'Difuzora veids nesakrīt ar kolektoru (pieplūde/nosūce)',
+ err_start_recup:'Cietā caurule sākas pie rekuperatora. Vispirms novietojiet to plānā (solis «Rekuperators»).',
+ err_end_col:'Šai caurulei jābeidzas pie kolektora', err_riser:'Vispirms piesaistiet stāvvadu kolektoram (atlasiet stāvvadu)',
+ err_has_routes:'Vispirms dzēsiet pievienotās caurules', err_noimg:'Vispirms augšupielādējiet stāva plānu', err_short:'Nepieciešami vismaz divi punkti',
+ checks:'Cauruļu pārbaude', supply:'Pieplūde', extract:'Nosūce', need:'vajag ≥ {v} m³/h', min_pipes:'Minimums: {a}×Ø75 vai {b}×Ø90 (vai kombinācija)',
+ props:'Īpašības', model:'Modelis', connected:'Pieslēgtas caurules', length:'Garums', elbows:'Līkumi', link_col:'Kolektors', side:'Veids',
+ plenum:'Difuzora kolektors', area:'Platība', del_sel:'Dzēst', n_outlets:'izejas', caps:'Aizbāžņi', not_linked:'— nav izvēlēts —',
+ recuperator:'Rekuperators', collector:'Kolektors', diffuser:'Difuzors', riser_o:'Stāvvads', route_flex:'Elastīgā caurule', route_rigid:'Cietā caurule',
+ client_t:'Klienta dati (PDF failam)', c_name:'Vārds', c_phone:'Tālrunis', c_email:'E-pasts', c_address:'Objekta adrese',
+ extras_t:'Papildus (pēc izvēles)', extras_hint:'Trokšņa slāpētājus un citas pozīcijas var pievienot tāmei.',
+ pdf_btn:'Lejupielādēt PDF', pdf_making:'Gatavo PDF…', pdf_done:'PDF gatavs',
+ est_title:'Rekuperācijas sistēmas tāme', col_item:'Pozīcija', col_qty:'Daudz.', col_unit:'Mērv.', col_price:'Cena', col_sum:'Summa',
+ materials:'Materiāli', labor:'Montāža', mat_total:'Materiāli kopā', lab_total:'Montāža kopā', subtotal:'Kopā bez PVN', vat:'PVN {v}%', total:'Kopā ar PVN',
+ u_pcs:'gab.', u_coil:'rullis', u_m:'m', u_set:'kompl.', m3h:'m³/h', m2:'m²', m3:'m³', mm:'m',
+ lab_flex:'Elastīgo cauruļu montāža', lab_recup:'Rekuperatora pieslēgšana', lab_out:'Cauruļu izvade uz āru',
+ t_recuperator:'Rekuperators', t_collector:'Kolektors', t_plenum:'Difuzora kolektors', t_diffuser:'Difuzors', t_flex_pipe:'Elastīgā caurule',
+ t_rigid_pipe:'Cietā caurule', t_elbow:'Cietās caurules līkums', t_grille:'Ārējā reste', t_cap:'Aizbāznis', t_ring:'Blīvgredzens',
+ t_silencer:'Trokšņa slāpētājs', t_accessory:'Papildus',
+ warnings:'Piezīmes', w_no_recup:'Rekuperators nav izvēlēts', w_recup_small:'Rekuperatora plūsma {a} m³/h ir mazāka par nepieciešamo {b} m³/h',
+ w_side_low:'{side}: caurules nodrošina {cap} m³/h — mazāk par rekuperatora jaudu {need} m³/h', w_no_area:'Platība nav norādīta',
+ w_noscale:'{floor}: nav iestatīts mērogs — cauruļu garumi nav aprēķināti', w_diff_free:'Difuzori bez caurulēm: {n}',
+ w_col_empty:'Kolektori bez caurulēm: {n} (nav iekļauti tāmē)', w_missing:'Katalogā nav: {what}',
+ w_col_multi:'Nav kolektora ar {n} izejām — aprēķināti {c} gab. «{name}»', w_plenum_mixed:'Pie viena difuzora pievadītas dažāda diametra caurules',
+ w_plenum_big:'Nav difuzora kolektora ar {n} pieslēgumiem Ø{d}', w_riser:'Stāvvads nav piesaistīts kolektoram', w_no_outside:'Nav uzzīmētas gaisa ņemšanas un izvades caurules uz āru',
+ w_recup_unplaced:'Rekuperators nav novietots plānā', w_ok:'Piezīmju nav',
+ kpi_area:'Platība', kpi_vol:'Tilpums', kpi_air:'Nepieciešamā plūsma', kpi_recup:'Rekuperators',
+ demo_badge:'Demo katalogs: cenas ir nosacītas', date:'Datums', legend:'Apzīmējumi', page:'lpp.',
+ undo:'Atsaukt', fit:'Ietilpināt plānu', ok:'Labi', cancel:'Atcelt', yes:'Jā', saved:'Saglabāts',
+ diffuser_any:'jebkurš', kind_supply:'pieplūde', kind_extract:'nosūce', kind_any:'jebkurš', universal:'universāls',
+ adm_title:'Administrēšana', password:'Parole', login:'Ieiet', wrong_pw:'Nepareiza parole', back:'← Uz kalkulatoru',
+ settings:'Iestatījumi un montāžas cenas', catalog:'Preču katalogs', prices_note:'Visas cenas ievada bez PVN.',
+ s_vat:'PVN, %', s_reserve:'Cauruļu garuma rezerve, %', s_ach:'Gaisa apmaiņas koeficients, reizes/h', s_cap75:'Ø75 caurlaidība, m³/h',
+ s_cap90:'Ø90 caurlaidība, m³/h', s_lab_flex:'Elastīgās caurules montāža, € par metru', s_lab_recup:'Rekuperatora pieslēgšana, €',
+ s_lab_out:'Cauruļu izvade uz āru, € par izvadi', s_rings:'Blīvgredzeni uz vienu cauruli',
+ filter_all:'Visi veidi', add_item:'+ Pievienot pozīciju', import:'Importēt CSV / Excel', export:'Eksportēt uz Excel', save_all:'Saglabāt izmaiņas',
+ import_mode:'Kā importēt {n} pozīcijas?', import_replace:'Aizstāt visu katalogu', import_append:'Pievienot katalogam', imported:'Importētas pozīcijas: {n}',
+ demo_save:'Demo režīms: serveris nav atrasts, izmaiņas saglabājas tikai šajā pārlūkā.', server_save:'Izmaiņas tiek saglabātas serverī un ir redzamas visiem klientiem.',
+ f_type:'Veids', f_sku:'Artikuls', f_name:'Nosaukums', f_diameter:'Ø, mm', f_airflow:'Plūsma, m³/h', f_outlets:'Izejas', f_length:'Garums, m', f_kind:'Pielietojums', f_price:'Cena, €',
+ adm_help:'Lauki, kas konkrētajam veidam nav vajadzīgi, ir iepelēkoti. Kolektors ar Ø 0 ir universāls (75 un 90). Elastīgajai caurulei «Garums» ir ruļļa garums, cietajai — vienas caurules garums; cena — par rulli / gabalu.',
+ unsaved:'Ir nesaglabātas izmaiņas', save_err:'Neizdevās saglabāt: {e}', items_n:'Pozīcijas: {n}', reset_demo:'Atjaunot demo katalogu'
+}};
+I18N.en={
+ f_dims:'Size L×W×H, mm', footprint:'Footprint', rotate:'Rotate 90° (R)', need_scale:'Set the floor scale to show the object at real size.',
+ s_adj:'Mark-up / discount by product type, %', s_adj_hint:'Applied to the price-list price (“Price” column). Plus — mark-up, minus — discount. The client sees the final price.',
+ app_title:'Heat recovery ventilation calculator', admin:'Admin',
+ s1:'Plan', s2:'Scale & area', s3:'Unit', s4:'Layout', s5:'Estimate',
+ next:'Next →', prev:'← Back',
+ floors:'Floors', floor_n:'Floor {n}', add_floor:'+ Add floor', upload_plan:'Upload plan', replace_plan:'Replace plan',
+ rename:'Rename', del:'Delete', plan_hint:'Upload a plan of each floor (JPG, PNG or PDF). You can also drag the file onto the plan area.',
+ no_plan:'Upload a floor plan', drop_hint:'JPG, PNG or PDF — or drop the file here', plan_ok:'plan loaded', plan_none:'no plan',
+ pdf_pages:'The PDF has {n} pages. Which page should be used?', pdf_page:'Page', loading:'Loading…',
+ project:'Project', new_project:'New project', open_project:'Open project file', save_project:'Save project file',
+ autosave:'The project is saved automatically in this browser.',
+ confirm_new:'Start a new project? The current project will be removed from this browser.', confirm_del_floor:'Delete the floor and everything on it?',
+ floor_name:'Floor name', replace_q:'Replace the plan? Drawn objects stay, but the scale has to be set again.',
+ scale_t:'Scale', scale_hint:'Press “Mark a wall”, click both ends of any wall on the plan and enter its length.',
+ scale_btn:'Mark a wall', scale_ok:'Set: wall {m} m', scale_none:'Scale not set', wall_len:'Wall length, m',
+ area_t:'Area', area_hint:'Trace the outline of the house (or of separate rooms) corner by corner. To close the outline, click the first point or press Enter.',
+ area_btn:'Trace outline', contour:'Outline {n}', area_floor:'Floor area', area_total:'Area from outlines', area_manual:'Or enter the area manually, m²',
+ height:'Ceiling height, m', volume:'Volume', req_air:'Required air exchange', ach_note:'{ach} ×/h',
+ recup_hint:'Units whose maximum airflow is below the required airflow are shown dark — you can still choose them, but the capacity will not be enough.',
+ place_recup:'Place the unit on the plan', recup_placed:'Unit is on the plan — click to move', airflow:'Airflow', too_small:'too small',
+ no_items:'No items of this type in the catalogue',
+ tools:'Tools', tool_select:'Select / move', collectors:'Manifolds', col_supply:'Supply manifold', col_extract:'Extract manifold',
+ diffusers:'Diffusers', diff_supply:'Supply', diff_extract:'Extract', riser:'Riser from another floor', pipes:'Flexible ducts (indoors)', flex:'Draw duct',
+ rigid_t:'Rigid ducts (outdoors / unit)', rigid:'Draw rigid duct', diameter:'Diameter', rigid_kind:'Purpose',
+ rk_intake:'Outdoor air intake', rk_exhaust:'Exhaust to outside', rk_internal:'Unit → manifold',
+ h_select:'Drag objects and duct points. Mouse wheel — zoom, drag empty space — pan.',
+ h_place:'Click on the plan to place. Esc — finish.',
+ h_flex:'Start at a manifold (or riser), click bend points and finish at a diffuser. Shift — right angles, Backspace — remove point, Esc — cancel.',
+ h_rigid:'Start at the unit and click at the outer wall (or outside the house outline): the duct with 90° bends is built automatically and ends at the wall with a UVLA grille. A click inside the house adds a waypoint. Without a house outline — finish with a double-click or Enter.',
+ h_scale:'Click both ends of the wall.', h_area:'Click points along the outline. Click the first point or press Enter to close. Backspace — remove point.',
+ h_recup:'Click on the plan where the heat recovery unit will be installed.',
+ err_start_col:'A duct must start at a manifold or riser', err_side:'Diffuser type does not match the manifold (supply/extract)',
+ err_start_recup:'A rigid duct starts at the unit. Place it on the plan first (“Place the unit” button).',
+ err_end_col:'This duct must end at a manifold', err_riser:'Link the riser to a manifold first (select the riser)',
+ err_has_routes:'Delete the connected ducts first', err_noimg:'Upload a floor plan first', err_short:'At least two points are needed',
+ checks:'Duct check', supply:'Supply', extract:'Extract', need:'need ≥ {v} m³/h', min_pipes:'Minimum: {a}×Ø75 or {b}×Ø90 (or a combination)',
+ props:'Properties', model:'Model', connected:'Connected ducts', length:'Length', elbows:'Bends', link_col:'Manifold', side:'Type',
+ plenum:'Diffuser box', area:'Area', del_sel:'Delete', n_outlets:'outlets', caps:'End caps', not_linked:'— not selected —',
+ recuperator:'Heat recovery unit', collector:'Manifold', diffuser:'Diffuser', riser_o:'Riser', route_flex:'Flexible duct', route_rigid:'Rigid duct',
+ client_t:'Client details (for the PDF)', c_name:'Name', c_phone:'Phone', c_email:'E-mail', c_address:'Site address',
+ extras_t:'Extras (optional)', extras_hint:'Silencers and other items can be added to the estimate.',
+ pdf_btn:'Download PDF', pdf_making:'Preparing PDF…', pdf_done:'PDF ready',
+ est_title:'Heat recovery ventilation estimate', col_item:'Item', col_qty:'Qty', col_unit:'Unit', col_price:'Price', col_sum:'Total',
+ materials:'Materials', labor:'Installation', mat_total:'Materials total', lab_total:'Installation total', subtotal:'Total excl. VAT', vat:'VAT {v}%', total:'Total incl. VAT',
+ u_pcs:'pcs', u_coil:'coil', u_m:'m', u_set:'set', m3h:'m³/h', m2:'m²', m3:'m³', mm:'m',
+ lab_flex:'Flexible duct installation', lab_recup:'Unit connection', lab_out:'Duct outlet to outside',
+ t_recuperator:'Heat recovery unit', t_collector:'Manifold', t_plenum:'Diffuser box', t_diffuser:'Diffuser', t_flex_pipe:'Flexible duct',
+ t_rigid_pipe:'Rigid duct', t_elbow:'Rigid duct bend', t_grille:'External grille', t_cap:'End cap', t_ring:'Sealing ring',
+ t_silencer:'Silencer', t_accessory:'Extra',
+ warnings:'Notes', w_no_recup:'No unit selected', w_recup_small:'Unit airflow {a} m³/h is below the required {b} m³/h',
+ w_side_low:'{side}: ducts provide {cap} m³/h — less than the required air exchange {need} m³/h', w_no_area:'Area is not set',
+ w_noscale:'{floor}: scale not set — duct lengths are not calculated', w_diff_free:'Diffusers without ducts: {n}',
+ w_col_empty:'Manifolds without ducts: {n} (not included in the estimate)', w_missing:'Not in the catalogue: {what}',
+ w_col_multi:'No manifold with {n} outlets — {c} pcs of “{name}” counted', w_plenum_mixed:'Ducts of different diameters lead to one diffuser',
+ w_plenum_big:'No diffuser box with {n} connections Ø{d}', w_riser:'Riser is not linked to a manifold', w_no_outside:'Outdoor intake/exhaust ducts are not drawn',
+ w_recup_unplaced:'The unit is not placed on the plan', w_ok:'No notes',
+ kpi_area:'Area', kpi_vol:'Volume', kpi_air:'Required airflow', kpi_recup:'Unit',
+ demo_badge:'Demo catalogue: indicative prices', date:'Date', legend:'Legend', page:'p.',
+ undo:'Undo', fit:'Fit plan', ok:'OK', cancel:'Cancel', yes:'Yes', saved:'Saved',
+ diffuser_any:'any', kind_supply:'supply', kind_extract:'extract', kind_any:'any', universal:'universal',
+ adm_title:'Administration', password:'Password', login:'Log in', wrong_pw:'Wrong password', back:'← Back to calculator',
+ settings:'Settings and installation prices', catalog:'Product catalogue', prices_note:'All prices are entered excluding VAT.',
+ s_vat:'VAT, %', s_reserve:'Duct length reserve, %', s_ach:'Air change rate, ×/h', s_cap75:'Ø75 capacity, m³/h',
+ s_cap90:'Ø90 capacity, m³/h', s_lab_flex:'Flexible duct installation, € per metre', s_lab_recup:'Unit connection, €',
+ s_lab_out:'Duct outlet to outside, € per outlet', s_rings:'Sealing rings per duct',
+ filter_all:'All types', add_item:'+ Add item', import:'Import CSV / Excel', export:'Export to Excel', save_all:'Save changes',
+ import_mode:'How to import {n} items?', import_replace:'Replace the whole catalogue', import_append:'Add to the catalogue', imported:'Items imported: {n}',
+ demo_save:'Demo mode: no server found, changes are saved only in this browser.', server_save:'Changes are saved on the server and visible to all clients.',
+ f_type:'Type', f_sku:'Code', f_name:'Name', f_group:'Group', f_diameter:'Ø, mm', f_inlet:'Inlet Ø, mm', f_airflow:'Airflow, m³/h', f_outlets:'Outlets', f_length:'Length, m', f_kind:'Use', f_price:'List price, €',
+ adm_help:'Fields not used by a type are greyed out. Manifold with Ø 0 is universal (75 and 90). “Inlet Ø”: for a manifold — main duct connection, for a diffuser box — diffuser size. For a flexible duct “Length” is the coil length, for a rigid duct — one piece; price per coil / piece. A manifold with group “vertikalais” (LOK-V) is used only for vertical units. “Size”: the first two numbers are the footprint on the plan.',
+ unsaved:'There are unsaved changes', save_err:'Could not save: {e}', items_n:'Items: {n}', reset_demo:'Restore default catalogue',
+ g_all:'All', g_vertikalais:'Vertical', g_horizontalais:'Horizontal', g_griestu:'Ceiling', g_sienas:'Wall', tool_recup:'Heat recovery unit', move_recup:'Move the unit', auto:'auto'
+};
+Object.assign(I18N.ru,{
+ f_dims:'Размеры Д×Ш×В, мм', footprint:'Размер на плане', rotate:'Повернуть на 90° (R)', need_scale:'Задайте масштаб этажа — тогда объект будет в реальном размере.',
+ s_adj:'Наценка / скидка по типам товаров, %', s_adj_hint:'Применяется к цене из прайса (столбец «Цена»). Плюс — наценка, минус — скидка. Клиент видит итоговую цену.', f_price:'Цена по прайсу, €',
+ s3:'Рекуператор', recup_placed:'Рекуператор на плане — нажмите, чтобы переместить',
+ h_recup:'Нажмите на план там, где будет стоять рекуператор.',
+ err_start_recup:'Жёсткая труба начинается у рекуператора. Сначала поставьте его на план (кнопка «Поставить рекуператор»).',
+ w_side_low:'{side}: трубы дают {cap} м³/ч — меньше нужного воздухообмена {need} м³/ч',
+ f_group:'Группа', f_inlet:'Вход Ø, мм', reset_demo:'Восстановить каталог по умолчанию',
+ adm_help:'Поля, которые не нужны для типа, затенены. Коллектор с Ø 0 — универсальный (75 и 90). «Вход Ø»: у коллектора — подключение магистрали, у коллектора диффузора — размер диффузора. Для гибкой трубы «Длина» — длина бухты, для жёсткой — длина одной трубы, цена — за бухту / штуку. Коллектор с группой «vertikalais» (LOK-V) подбирается только для вертикальных рекуператоров. «Размеры»: первые два числа — площадь на плане.',
+ g_all:'Все', g_vertikalais:'Вертикальные', g_horizontalais:'Горизонтальные', g_griestu:'Потолочные', g_sienas:'Настенные', tool_recup:'Рекуператор', move_recup:'Переместить рекуператор', auto:'авто'
+});
+Object.assign(I18N.lv,{
+ f_dims:'Izmēri G×P×A, mm', footprint:'Izmērs plānā', rotate:'Pagriezt par 90° (R)', need_scale:'Iestatiet stāva mērogu — tad objekts būs reālajā izmērā.',
+ s_adj:'Uzcenojums / atlaide pēc preču veida, %', s_adj_hint:'Piemēro cenrāža cenai (kolonna «Cena»). Plus — uzcenojums, mīnuss — atlaide. Klients redz gala cenu.', f_price:'Cenrāža cena, €',
+ recup_placed:'Rekuperators novietots plānā — uzklikšķiniet, lai pārvietotu',
+ h_recup:'Uzklikšķiniet plānā vietā, kur tiks uzstādīts rekuperators.',
+ err_start_recup:'Cietā caurule sākas pie rekuperatora. Vispirms novietojiet to plānā (poga «Novietot rekuperatoru»).',
+ w_side_low:'{side}: caurules nodrošina {cap} m³/h — mazāk par nepieciešamo gaisa apmaiņu {need} m³/h',
+ f_group:'Grupa', f_inlet:'Ieejas Ø, mm', reset_demo:'Atjaunot noklusējuma katalogu',
+ adm_help:'Lauki, kas konkrētajam veidam nav vajadzīgi, ir iepelēkoti. Kolektors ar Ø 0 ir universāls (75 un 90). «Ieejas Ø»: kolektoram — maģistrāles pieslēgums, difuzora kolektoram — difuzora izmērs. Elastīgajai caurulei «Garums» ir ruļļa garums, cietajai — vienas caurules garums; cena — par rulli / gabalu. Kolektors ar grupu «vertikalais» (LOK-V) tiek izvēlēts tikai vertikāliem rekuperatoriem. «Izmēri»: pirmie divi skaitļi — aizņemtā vieta plānā.',
+ g_all:'Visi', g_vertikalais:'Vertikālie', g_horizontalais:'Horizontālie', g_griestu:'Griestu', g_sienas:'Sienas', tool_recup:'Rekuperators', move_recup:'Pārvietot rekuperatoru', auto:'auto'
+});
+
+let lang = (()=>{ try{ const l=localStorage.getItem('recu_lang'); if(l&&I18N[l]) return l }catch(e){} return 'lv' })();
+function t(k, v){ let s=(I18N[lang]&&I18N[lang][k])??I18N.lv[k]??I18N.ru[k]??k; if(v) for(const x in v) s=s.split('{'+x+'}').join(v[x]); return s }
+function applyI18n(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>el.title=t(el.dataset.i18nTitle));
+  document.querySelectorAll('#langSw button').forEach(b=>b.classList.toggle('on',b.dataset.lang===lang));
+  document.title=t('app_title');
+}
+
+// ---------------------------------------------------------------- helpers
+const $=s=>document.querySelector(s);
+const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>{ const n=parseFloat(String(v??'').replace(',','.').replace(/\s/g,'')); return isFinite(n)?n:0 };
+const loc=()=>({lv:'lv-LV',ru:'ru-RU',en:'en-GB'})[lang]||'lv-LV';
+const f1=n=>(Math.round(n*10)/10).toLocaleString(loc(),{maximumFractionDigits:1});
+const f0=n=>Math.round(n).toLocaleString(loc());
+const money=n=>(Math.round(n*100)/100).toLocaleString(loc(),{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+const polyLen=pts=>{let s=0;for(let i=1;i<pts.length;i++)s+=dist(pts[i-1],pts[i]);return s};
+const polyArea=pts=>{let s=0;for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];s+=a[0]*b[1]-b[0]*a[1]}return Math.abs(s)/2};
+const centroid=pts=>[pts.reduce((s,p)=>s+p[0],0)/pts.length,pts.reduce((s,p)=>s+p[1],0)/pts.length];
+const SIDE_COL={supply:'#2563eb',extract:'#dc2626'};
+const RIGID_COL={intake:'#0d9488',exhaust:'#7c3aed',internal:'#475569'};
+function toast(msg,err){const el=$('#toast');el.textContent=msg;el.className='show'+(err?' err':'');clearTimeout(toast.t);toast.t=setTimeout(()=>el.className='',err?3800:2400)}
+function busy(on,txt){$('#busy').classList.toggle('show',!!on);$('#busyTxt').textContent=txt||''}
+function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s)})}
+const LIB={
+  pdf:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+  pdfWorker:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+  jspdf:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  h2c:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  xlsx:'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+};
+function modal({title,html='',okText,cancelText,buttons}){
+  return new Promise(res=>{
+    const bg=document.createElement('div');bg.className='modalBg';
+    const btns=buttons||[{v:null,label:cancelText||t('cancel')},{v:true,label:okText||t('ok'),pri:true}];
+    bg.innerHTML=`<form class="modal"><h3>${esc(title)}</h3><div>${html}</div><div class="acts">${btns.map((b,i)=>`<button type="${b.pri?'submit':'button'}" class="btn ${b.pri?'pri':''}" data-i="${i}">${esc(b.label)}</button>`).join('')}</div></form>`;
+    document.body.appendChild(bg);
+    const form=bg.querySelector('form');
+    const vals=()=>{const o={};form.querySelectorAll('[name]').forEach(i=>o[i.name]=i.value);return o};
+    const done=v=>{bg.remove();res(v)};
+    form.addEventListener('submit',e=>{e.preventDefault();const b=btns.find(b=>b.pri);done(b.v===true?vals():b.v)});
+    form.querySelectorAll('button[type=button]').forEach(b=>b.addEventListener('click',()=>{const x=btns[+b.dataset.i];done(x.v===true?vals():x.v)}));
+    bg.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();done(null)}});
+    setTimeout(()=>{const i=form.querySelector('input,select');(i||form.querySelector('.pri')).focus();if(i&&i.select)i.select()},30);
+  });
+}
+async function saveBlob(blob,filename){
+  try{ if(window.claude&&typeof claude.use==='function'){ const d=await claude.use('downloads'); if(d){ await d.save({filename,data:blob}); return true } } }
+  catch(e){ if(e&&e.code==='declined') return false; console.warn(e) }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},3000);return true;
+}
+
+// ---------------------------------------------------------------- catalog / settings
+const TYPES=['recuperator','collector','plenum','diffuser','flex_pipe','rigid_pipe','elbow','grille','cap','ring','silencer','accessory'];
+const FIELDS=['type','sku','name','group','dims','diameter','inlet','airflow','outlets','length','kind','price'];
+const NUMF=['diameter','inlet','airflow','outlets','length','price'];
+const TYPE_FIELDS={recuperator:['airflow','diameter','group','dims'],collector:['outlets','diameter','inlet','group','dims'],plenum:['outlets','diameter','inlet'],diffuser:['kind','diameter'],
+  flex_pipe:['diameter','length'],rigid_pipe:['diameter','length'],elbow:['diameter'],grille:['diameter'],cap:['diameter'],ring:['diameter'],silencer:['diameter'],accessory:[]};
+const DEFAULT_SETTINGS={vat:21,reserve:10,ach:1,cap75:30,cap90:50,laborFlexPerM:0,laborRecup:0,laborOutside:0,ringsPerPipe:2};
+/* Catalogue comes from the server (/api/data, final client prices only). A demo build may inject items here. */
+const DEMO_ITEMS=[];
+let DATA={settings:{...DEFAULT_SETTINGS},items:DEMO_ITEMS.map(x=>({...x})),demo:false};
+let serverMode=false;
+function normData(d){
+  const out={settings:{...DEFAULT_SETTINGS,...(d&&d.settings||{})},items:[],demo:!!(d&&d.demo)};
+  for(const k in out.settings) out.settings[k]=num(out.settings[k]);
+  (d&&d.items||[]).forEach(it=>{ if(!TYPES.includes(it.type)) return;
+    out.items.push({id:it.id||uid(),type:it.type,sku:String(it.sku??''),name:String(it.name??''),group:String(it.group??''),dims:String(it.dims??''),diameter:num(it.diameter),inlet:num(it.inlet),airflow:num(it.airflow),outlets:Math.round(num(it.outlets)),length:num(it.length),kind:['supply','extract','any'].includes(it.kind)?it.kind:'any',price:num(it.price)}) });
+  return out;
+}
+async function loadData(){
+  try{
+    const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),4000);
+    const r=await fetch('api/data',{cache:'no-store',signal:ctl.signal}); clearTimeout(tm);
+    if(r.ok && (r.headers.get('content-type')||'').includes('json')){ serverMode=true; const j=await r.json(); if(j&&j.items){ DATA=normData(j); return } }
+  }catch(e){}
+  try{ const s=localStorage.getItem('recu_catalog'); if(s){ DATA=normData(JSON.parse(s)); return } }catch(e){}
+  DATA={settings:{...DEFAULT_SETTINGS},items:DEMO_ITEMS.map(x=>({...x})),demo:false};
+}
+const S=()=>DATA.settings;
+const itemsOf=type=>DATA.items.filter(i=>i.type===type);
+const itemById=id=>DATA.items.find(i=>i.id===id);
+const pickD=(type,d)=>itemsOf(type).filter(i=>+i.diameter===+d).sort((a,b)=>a.price-b.price)[0];
+const priceOf=it=>it?Math.round(num(it.price)*(1+num(S()['adj_'+it.type])/100)*100)/100:0;
+const itemLabel=it=>it?(it.name||t('t_'+it.type))+(it.sku&&/\d{4,}/.test(it.sku)?` (${it.sku})`:''):'';
+
+// ---------------------------------------------------------------- project state
+function newState(){return{v:1,height:2.7,areaManual:'',recupId:null,floors:[{id:uid(),name:'',imageId:null,scale:null,areas:[]}],objects:[],routes:[],extras:{},client:{name:'',phone:'',email:'',address:''}}}
+let state=newState();
+let images={};
+const ui={step:1,floorId:null,flexD:75,rigidKind:'intake',rigidD:160,recupGroup:''};
+let undoStack=[];
+function snap(){undoStack.push(JSON.stringify(state));if(undoStack.length>60)undoStack.shift()}
+function undo(){if(draft){draft=null;renderPlan();return} const s=undoStack.pop();if(!s)return;state=JSON.parse(s);selected=null;if(!state.floors.find(f=>f.id===ui.floorId))ui.floorId=state.floors[0].id;changed()}
+const curFloor=()=>state.floors.find(f=>f.id===ui.floorId)||state.floors[0];
+const floorName=f=>f.name||t('floor_n',{n:state.floors.indexOf(f)+1});
+const curImg=()=>{const f=curFloor();return f&&f.imageId?images[f.imageId]:null};
+const objById=id=>state.objects.find(o=>o.id===id);
+const pxPerM=f=>f&&f.scale&&f.scale.meters>0?dist(f.scale.p1,f.scale.p2)/f.scale.meters:0;
+const recupObj=()=>state.objects.find(o=>o.kind==='recup');
+function rootCollector(id){const o=objById(id);if(!o)return null;if(o.kind==='collector')return o;if(o.kind==='riser'){const c=objById(o.link);return c&&c.kind==='collector'?c:null}return null}
+function routePts(r){const pts=r.pts.map(p=>p.slice());const a=objById(r.from);if(a&&a.floor===r.floor)pts[0]=[a.x,a.y];const b=r.to&&objById(r.to);if(b&&b.floor===r.floor)pts[pts.length-1]=[b.x,b.y];return pts}
+function routeSide(r){if(r.kind!=='flex')return null;const c=rootCollector(r.from);return c?c.side:null}
+
+// ---------------------------------------------------------------- persistence (IndexedDB)
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('recu',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbSet(k,v){const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+async function idbGet(k){const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction('kv','readonly');const q=tx.objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+let saveT;
+function scheduleSave(){clearTimeout(saveT);saveT=setTimeout(async()=>{try{await idbSet('project',{state,images:usedImages()})}catch(e){console.warn('save',e)}},500)}
+function usedImages(){const o={};state.floors.forEach(f=>{if(f.imageId&&images[f.imageId])o[f.imageId]=images[f.imageId]});return o}
+async function loadProject(){try{const p=await idbGet('project');if(p&&p.state&&p.state.floors){state=Object.assign(newState(),p.state);images=p.images||{}}}catch(e){console.warn(e)}ui.floorId=state.floors[0].id;syncRigidD()}
+function syncRigidD(){const r=itemById(state.recupId);if(r&&+r.diameter){ui.rigidD=+r.diameter;return}const ds=[...new Set(itemsOf('rigid_pipe').map(i=>+i.diameter))];if(r&&r.diameter&&(ds.includes(+r.diameter)||!ds.length))ui.rigidD=+r.diameter;else if(ds.length&&!ds.includes(ui.rigidD))ui.rigidD=ds[0]}
+
+// ---------------------------------------------------------------- plan import
+async function importPlanFile(file){
+  const f=curFloor(); if(!file) return;
+  if(f.imageId && !(await modal({title:t('replace_plan'),html:`<p class="hint">${esc(t('replace_q'))}</p>`,okText:t('yes')}))) return;
+  busy(true,t('loading'));
+  try{
+    let src;
+    if(file.type==='application/pdf'||/\.pdf$/i.test(file.name)) src=await pdfToImage(file);
+    else src=await fileToDataURL(file);
+    if(!src){busy(false);return}
+    const img=await loadImg(src);
+    let w=img.naturalWidth,h=img.naturalHeight;const MAX=3600;
+    if(Math.max(w,h)>MAX){const k=MAX/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);src=c.toDataURL('image/jpeg',.9)}
+    snap();
+    const id=uid(); images[id]={src,w,h};
+    if(f.imageId){f.scale=null}
+    f.imageId=id; selected=null; draft=null;
+    changed(); fitView();
+  }catch(e){console.error(e);toast(String(e.message||e),true)}
+  busy(false);
+}
+const fileToDataURL=file=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(file)});
+const loadImg=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('image'));i.src=src});
+async function pdfToImage(file){
+  await loadScript(LIB.pdf);
+  const pdfjs=window.pdfjsLib; pdfjs.GlobalWorkerOptions.workerSrc=LIB.pdfWorker;
+  const buf=await file.arrayBuffer();
+  const doc=await pdfjs.getDocument({data:buf}).promise;
+  let pageNo=1;
+  if(doc.numPages>1){busy(false);const r=await modal({title:t('pdf_page'),html:`<p class="hint">${esc(t('pdf_pages',{n:doc.numPages}))}</p><input type="number" name="p" min="1" max="${doc.numPages}" value="1">`});if(!r)return null;pageNo=Math.min(doc.numPages,Math.max(1,Math.round(num(r.p))||1));busy(true,t('loading'))}
+  const page=await doc.getPage(pageNo);const v1=page.getViewport({scale:1});const sc=Math.min(4,3000/Math.max(v1.width,v1.height));const vp=page.getViewport({scale:sc});
+  const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+  await page.render({canvasContext:ctx,viewport:vp}).promise;
+  return c.toDataURL('image/jpeg',.9);
+}
+
+// ---------------------------------------------------------------- editor
+const svg=$('#plan'), vpG=$('#vp'), overlay=$('#overlay'), draftG=$('#draftG'), planImg=$('#planImg');
+const view={s:1,tx:0,ty:0};
+let tool='select', draft=null, selected=null, drag=null, mouse=[0,0], spaceDown=false, shiftDown=false;
+function setTool(tl){tool=tl;draft=null;svg.classList.toggle('t-select',tl==='select');svg.classList.toggle('t-draw',tl!=='select');renderSide();renderPlan();renderHint()}
+function fitView(){const img=curImg();if(!img)return;const r=svg.getBoundingClientRect();if(!r.width)return;const s=Math.min(r.width/img.w,r.height/img.h)*.94;view.s=s;view.tx=(r.width-img.w*s)/2;view.ty=(r.height-img.h*s)/2;applyView();renderPlan()}
+function applyView(){vpG.setAttribute('transform',`translate(${view.tx},${view.ty}) scale(${view.s})`)}
+function zoomAt(f,cx,cy){const ns=Math.min(40,Math.max(.03,view.s*f));f=ns/view.s;view.tx=cx-(cx-view.tx)*f;view.ty=cy-(cy-view.ty)*f;view.s=ns;applyView();renderPlan()}
+function toImg(e){const r=svg.getBoundingClientRect();return[(e.clientX-r.left-view.tx)/view.s,(e.clientY-r.top-view.ty)/view.s]}
+function hitObj(p,kinds){const f=curFloor();const k=1/view.s;let best=null,bd=1e9;state.objects.forEach(o=>{if(o.floor!==f.id||(kinds&&!kinds.includes(o.kind)))return;let d=dist(p,[o.x,o.y]);const sz=objSize(o);
+    if(sz&&Math.abs(p[0]-o.x)<=sz[0]/2+6*k&&Math.abs(p[1]-o.y)<=sz[1]/2+6*k)d=Math.min(d,1e-3*d);const tol=(o.kind==='recup'?26:o.kind==='collector'?20:16)*k;if(d<tol&&d<bd){bd=d;best=o}});return best}
+function constrain(p){if(!shiftDown||!draft||!draft.pts.length)return p;const l=draft.pts[draft.pts.length-1];return Math.abs(p[0]-l[0])>Math.abs(p[1]-l[1])?[p[0],l[1]]:[l[0],p[1]]}
+function pushPt(p){const l=draft.pts[draft.pts.length-1];if(l&&dist(l,p)<4/view.s)return false;draft.pts.push(p);return true}
+
+// --- rigid duct auto-routing: 90° legs, end on outer wall
+function turns(pts){let n=0;for(let i=1;i<pts.length-1;i++){const a=[pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]],b=[pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]];
+  const la=Math.hypot(...a),lb=Math.hypot(...b);if(la<1e-6||lb<1e-6)continue;const c=(a[0]*b[0]+a[1]*b[1])/(la*lb);if(c<Math.cos(10*Math.PI/180))n++}return n}
+function inPoly(p,pts){let r=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const a=pts[i],b=pts[j];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])r=!r}return r}
+function nearestWall(p,f){let best=null;(f||curFloor()).areas.forEach(a=>{for(let i=0;i<a.pts.length;i++){const A=a.pts[i],B=a.pts[(i+1)%a.pts.length];const ex=B[0]-A[0],ey=B[1]-A[1],L2=ex*ex+ey*ey;if(!L2)continue;
+  let u=((p[0]-A[0])*ex+(p[1]-A[1])*ey)/L2;u=Math.max(0,Math.min(1,u));const W=[A[0]+u*ex,A[1]+u*ey];const d=dist(p,W);if(!best||d<best.d){const L=Math.sqrt(L2);best={pt:W,d,n:[-ey/L,ex/L]}}}});return best}
+function wallHit(p){const f=curFloor();if(!f.areas.length)return null;const w=nearestWall(p,f);if(!w)return null;const inside=f.areas.some(a=>inPoly(p,a.pts));return(!inside||w.d<14/view.s)?w:null}
+function orthoTail(pts,p){const L=pts[pts.length-1];const ppm=pxPerM(curFloor());const tol=ppm?.12*ppm:8/view.s;const dx=p[0]-L[0],dy=p[1]-L[1];
+  if(Math.abs(dx)<tol)return[[L[0],p[1]]];if(Math.abs(dy)<tol)return[[p[0],L[1]]];
+  let horizFirst=Math.abs(dx)>=Math.abs(dy);if(pts.length>=2){const P=pts[pts.length-2];horizFirst=Math.abs(L[0]-P[0])>=Math.abs(L[1]-P[1])}
+  return horizFirst?[[p[0],L[1]],p]:[[L[0],p[1]],p]}
+function wallTail(pts,w){const L=pts[pts.length-1],W=w.pt,n=w.n;const t=(L[0]-W[0])*n[0]+(L[1]-W[1])*n[1];const C=[W[0]+n[0]*t,W[1]+n[1]*t];return dist(L,C)>2/view.s?[C,W]:[W]}
+function rigidTail(p){if(!draft)return[p];if(ui.rigidKind!=='internal'){const w=wallHit(p);if(w)return wallTail(draft.pts,w)}return orthoTail(draft.pts,p)}
+function pushRigid(p){if(!pushPt(p))return;const P=draft.pts;if(P.length>=3){const a=P[P.length-3],b=P[P.length-2],c=P[P.length-1];const cr=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(cr)<1e-6*Math.max(1,dist(a,b)*dist(b,c))||turns([a,b,c])===0&&dist(a,c)>=dist(a,b))P.splice(P.length-2,1)}}
+function lbl(p,text,k,color,size=12,anchor='middle'){return `<text x="${p[0]}" y="${p[1]}" font-size="${size*k}" text-anchor="${anchor}" dominant-baseline="middle" fill="${color}" stroke="#fff" stroke-width="${3.2*k}" paint-order="stroke" font-weight="600" font-family="Inter,Arial,sans-serif" pointer-events="none">${esc(text)}</text>`}
+function overlayMarkup(f,k,opt={}){
+  const ppm=pxPerM(f); const interactive=!opt.print; let h=''; const placed=[];
+  const isSel=(kind,id)=>interactive&&selected&&selected.kind===kind&&selected.id===id;
+  // areas
+  f.areas.forEach(a=>{const sel=isSel('area',a.id);
+    h+=`<polygon ${interactive?`data-id="${a.id}" data-k="area"`:''} points="${a.pts.map(p=>p.join(',')).join(' ')}" fill="rgba(16,185,129,.12)" stroke="${sel?'#f59e0b':'#10b981'}" stroke-width="${(sel?3:2)*k}" stroke-dasharray="${8*k} ${4*k}" ${interactive&&tool!=='select'?'pointer-events="none"':''}/>`;
+    if(ppm)h+=lbl(centroid(a.pts),f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'),k,'#047857',15)});
+  // scale
+  if(f.scale){const {p1,p2}=f.scale;h+=`<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="#f59e0b" stroke-width="${3*k}"/>`+[p1,p2].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="${4*k}" fill="#f59e0b"/>`).join('')+lbl([(p1[0]+p2[0])/2,(p1[1]+p2[1])/2-12*k],f1(f.scale.meters)+' '+t('mm'),k,'#b45309',13)}
+  // routes
+  const routes=state.routes.filter(r=>r.floor===f.id).sort((a,b)=>(a.kind==='rigid')-(b.kind==='rigid'));
+  routes.forEach(r=>{const pts=routePts(r);if(pts.length<2)return;const ps=pts.map(p=>p.join(',')).join(' ');const sel=isSel('route',r.id);
+    const col=r.kind==='rigid'?RIGID_COL[r.rkind]||'#475569':(SIDE_COL[routeSide(r)]||'#64748b');const w=(r.kind==='rigid'?8:r.d==90?4.5:3)*k;
+    if(sel)h+=`<polyline points="${ps}" fill="none" stroke="#f59e0b" stroke-width="${w+6*k}" stroke-linejoin="round" stroke-linecap="round" opacity=".7"/>`;
+    h+=`<polyline points="${ps}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    if(r.kind==='rigid')h+=`<polyline points="${ps}" fill="none" stroke="#fff" stroke-width="${2*k}" stroke-dasharray="${7*k} ${6*k}" stroke-linejoin="round"/>`;
+    if(r.kind==='rigid'&&!r.to){const e=pts[pts.length-1];h+=`<rect x="${e[0]-7*k}" y="${e[1]-7*k}" width="${14*k}" height="${14*k}" fill="#fff" stroke="${col}" stroke-width="${2.5*k}"/><line x1="${e[0]-4*k}" y1="${e[1]}" x2="${e[0]+4*k}" y2="${e[1]}" stroke="${col}" stroke-width="${1.5*k}"/><line x1="${e[0]}" y1="${e[1]-4*k}" x2="${e[0]}" y2="${e[1]+4*k}" stroke="${col}" stroke-width="${1.5*k}"/>`;const gi=pickD('grille',r.d);if(gi)h+=lbl([e[0],e[1]-17*k],gi.name.split(' ')[0],k,col,10)}
+    if(interactive)h+=`<polyline data-id="${r.id}" data-k="route" points="${ps}" fill="none" stroke="transparent" stroke-width="${Math.max(16*k,w+8*k)}" style="pointer-events:${tool==='select'?'stroke':'none'}"/>`;
+    // label on longest segment
+    let bi=1,bl=0;for(let i=1;i<pts.length;i++){const l=dist(pts[i-1],pts[i]);if(l>bl){bl=l;bi=i}}
+    if(bl>40*k){const a=pts[bi-1],b=pts[bi];const lp=[(a[0]+b[0])/2,(a[1]+b[1])/2];if(!sel&&placed.some(q=>Math.abs(q[0]-lp[0])<70*k&&Math.abs(q[1]-lp[1])<16*k))return;placed.push(lp);const len=ppm?routeLenM(r,f):0;const txt='Ø'+r.d+(ppm?' · '+f1(len)+' '+t('mm'):'');h+=lbl([(a[0]+b[0])/2,(a[1]+b[1])/2-(w/2+8*k)],txt,k,col,11)}
+    if(sel){const last=pts.length-1;pts.forEach((p,i)=>{const free=(i>0&&i<last)||(i===last&&r.kind==='rigid'&&!r.to);if(!free)return;h+=`<circle data-vertex="${i}" data-rid="${r.id}" cx="${p[0]}" cy="${p[1]}" r="${6*k}" fill="#fff" stroke="#f59e0b" stroke-width="${2.5*k}" style="cursor:move"/>`})}
+  });
+  // objects
+  const cnt={};state.routes.forEach(r=>{if(r.kind==='flex'){cnt[r.to]=(cnt[r.to]||0)+1;const c=rootCollector(r.from);if(c)cnt[c.id]=(cnt[c.id]||0)+1}});
+  state.objects.filter(o=>o.floor===f.id).forEach(o=>{const sel=isSel('obj',o.id);const x=o.x,y=o.y;let g='';
+    const sz=objSize(o);
+    if(sz&&(o.kind==='recup'||o.kind==='collector')){const [w,hh]=sz;const col=o.kind==='recup'?'#0f172a':SIDE_COL[o.side];const txt=o.kind==='recup'?'REK':'K·'+(cnt[o.id]||0);
+      g=`<rect x="${x-w/2}" y="${y-hh/2}" width="${w}" height="${hh}" rx="${Math.min(w,hh)*.08}" fill="${col}" fill-opacity="${o.kind==='recup'?.88:.85}" stroke="${sel?'#f59e0b':'#fff'}" stroke-width="${(sel?3:1.5)*k}"/>`;
+      const fs=Math.min(12*k,hh*.5,w/(txt.length*.62));
+      g+=fs>=7*k?`<text x="${x}" y="${y+fs*.08}" font-size="${fs}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-weight="700" font-family="Inter,Arial,sans-serif" pointer-events="none">${txt}</text>`:lbl([x,y-hh/2-9*k],txt,k,col,11);
+      if(!opt.print&&sel)g+=`<rect x="${x-w/2-4*k}" y="${y-hh/2-4*k}" width="${w+8*k}" height="${hh+8*k}" fill="none" stroke="#f59e0b" stroke-width="${1.5*k}" stroke-dasharray="${4*k} ${3*k}" pointer-events="none"/>`}
+    else if(o.kind==='recup'){g=`<rect x="${x-24*k}" y="${y-15*k}" width="${48*k}" height="${30*k}" rx="${5*k}" fill="#0f172a" ${sel?`stroke="#f59e0b" stroke-width="${3*k}"`:''}/><text x="${x}" y="${y+1*k}" font-size="${12*k}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-weight="700" font-family="Inter,Arial,sans-serif">REK</text>`}
+    else if(o.kind==='collector'){const c=SIDE_COL[o.side];g=`<rect x="${x-18*k}" y="${y-12*k}" width="${36*k}" height="${24*k}" rx="${4*k}" fill="${c}" ${sel?`stroke="#f59e0b" stroke-width="${3*k}"`:`stroke="#fff" stroke-width="${1.5*k}"`}/><text x="${x}" y="${y+1*k}" font-size="${11*k}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-weight="700" font-family="Inter,Arial,sans-serif">K·${cnt[o.id]||0}</text>`}
+    else if(o.kind==='diffuser'){const c=SIDE_COL[o.side];g=`<circle cx="${x}" cy="${y}" r="${11*k}" fill="${c}" ${sel?`stroke="#f59e0b" stroke-width="${3.5*k}"`:`stroke="#fff" stroke-width="${2*k}"`}/><circle cx="${x}" cy="${y}" r="${4.5*k}" fill="#fff"/>`;if(cnt[o.id]>1)g+=lbl([x+14*k,y-12*k],'×'+cnt[o.id],k,c,11,'start')}
+    else if(o.kind==='riser'){const c=o.side?SIDE_COL[o.side]:'#64748b';g=`<circle cx="${x}" cy="${y}" r="${11*k}" fill="#fff" stroke="${sel?'#f59e0b':c}" stroke-width="${3*k}" stroke-dasharray="${4*k} ${2.5*k}"/><text x="${x}" y="${y+1*k}" font-size="${13*k}" text-anchor="middle" dominant-baseline="middle" fill="${c}" font-weight="700" font-family="Arial,sans-serif">↕</text>`}
+    h+=`<g ${interactive?`data-id="${o.id}" data-k="obj" style="cursor:${tool==='select'?'move':'inherit'}"`:''}>${g}</g>`});
+  return h;
+}
+function parseDims(v){const m=String(v||'').match(/\d+(?:[.,]\d+)?/g);return m&&m.length>=2?[num(m[0]),num(m[1])]:null}
+function defaultCollector(){const r=itemById(state.recupId);const rg=r?r.group:'';return itemsOf('collector').filter(c=>!c.group||c.group===rg).sort((a,b)=>a.outlets-b.outlets||a.price-b.price)[0]}
+function objItem(o){if(o.kind==='recup')return itemById(state.recupId);if(o.kind==='collector')return itemById(o._model)||defaultCollector();return null}
+function objSize(o){if(o.kind!=='recup'&&o.kind!=='collector')return null;const f=state.floors.find(x=>x.id===o.floor);const ppm=pxPerM(f);if(!ppm)return null;
+  const it=objItem(o);const d=parseDims(it&&it.dims);if(!d)return null;let w=d[0]/1000*ppm,h=d[1]/1000*ppm;if((o.rot||0)%180)[w,h]=[h,w];return[w,h]}
+function routeLenM(r,f){f=f||state.floors.find(x=>x.id===r.floor);const ppm=pxPerM(f);if(!ppm)return 0;let l=polyLen(routePts(r))/ppm;const a=objById(r.from);if(a&&a.kind==='riser')l+=num(state.height);return l}
+function renderPlan(){
+  const img=curImg();
+  $('#empty').style.display=img?'none':'grid';
+  if(!img){overlay.innerHTML='';draftG.innerHTML='';planImg.setAttribute('href','');return}
+  if(planImg.getAttribute('href')!==img.src){planImg.setAttribute('href',img.src);planImg.setAttribute('width',img.w);planImg.setAttribute('height',img.h)}
+  compute();overlay.innerHTML=overlayMarkup(curFloor(),1/view.s);
+  renderDraft();
+}
+function renderDraft(){
+  if(!draft){draftG.innerHTML='';return}
+  const k=1/view.s;const pts=draft.type==='rigid'?[...draft.pts,...rigidTail(mouse)]:[...draft.pts,constrain(mouse)];
+  let col='#f59e0b';
+  if(draft.type==='flex'){const c=rootCollector(draft.from);col=c?SIDE_COL[c.side]:'#64748b'}
+  if(draft.type==='rigid')col=RIGID_COL[ui.rigidKind];
+  if(draft.type==='area')col='#10b981';
+  let h=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="${draft.type==='area'?'rgba(16,185,129,.1)':'none'}" stroke="${col}" stroke-width="${(draft.type==='rigid'?6:3)*k}" stroke-dasharray="${8*k} ${5*k}" stroke-linejoin="round"/>`;
+  if(draft.type==='rigid'&&ui.rigidKind!=='internal'){const w=wallHit(mouse);if(w)h+=`<circle cx="${w.pt[0]}" cy="${w.pt[1]}" r="${9*k}" fill="none" stroke="${col}" stroke-width="${2.5*k}"/>`+lbl([w.pt[0],w.pt[1]-18*k],'UVLA',k,col,11)}
+  draft.pts.forEach((p,i)=>h+=`<circle cx="${p[0]}" cy="${p[1]}" r="${(draft.type==='area'&&i===0?7:4)*k}" fill="${col}" stroke="#fff" stroke-width="${1.5*k}"/>`);
+  const f=curFloor(),ppm=pxPerM(f);
+  if(ppm&&draft.type!=='scale'&&draft.type!=='area'){let l=polyLen(pts)/ppm;h+=lbl([mouse[0]+14*k,mouse[1]+14*k],f1(l)+' '+t('mm'),k,col,12,'start')}
+  draftG.innerHTML=h;
+}
+function renderHint(){
+  const m={select:'h_select',recup:'h_recup',flex:'h_flex',rigid:'h_rigid',scale:'h_scale',area:'h_area'};
+  let k=m[tool]||'h_place';if(!curImg()||ui.step===5||(tool==='select'&&ui.step<4)){$('#hint').textContent='';return}
+  $('#hint').textContent=t(k);
+}
+
+// pointer events
+svg.addEventListener('contextmenu',e=>e.preventDefault());
+svg.addEventListener('wheel',e=>{e.preventDefault();const r=svg.getBoundingClientRect();zoomAt(Math.exp(-e.deltaY*(e.ctrlKey?0.01:0.0015)),e.clientX-r.left,e.clientY-r.top)},{passive:false});
+const pointers=new Map();let lastDown=null,lastFinish=0;
+svg.addEventListener('pointerdown',e=>{
+  if(!curImg())return;
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  try{svg.setPointerCapture(e.pointerId)}catch(_){}
+  if(pointers.size===2){const [a,b]=[...pointers.values()];drag={type:'pinch',d:Math.hypot(a.x-b.x,a.y-b.y),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2};return}
+  const p=toImg(e);mouse=p;
+  if(document.activeElement&&document.activeElement!==document.body&&document.activeElement.blur)document.activeElement.blur();
+  const now=Date.now(),dbl=lastDown&&now-lastDown.t<380&&Math.hypot(e.clientX-lastDown.x,e.clientY-lastDown.y)<8;lastDown={t:now,x:e.clientX,y:e.clientY};
+  if(dbl&&draft&&e.button===0){if(draft.type==='area'&&draft.pts.length>=3){closeArea();lastFinish=now;return}if(draft.type==='rigid'){finishRigid(null);lastFinish=now;return}}
+  if(dbl&&!draft&&now-lastFinish<600)return;
+  if(e.button===1||e.button===2||spaceDown){drag={type:'pan',sx:e.clientX,sy:e.clientY,tx:view.tx,ty:view.ty};svg.classList.add('panning');return}
+  if(e.button!==0)return;
+  const f=curFloor();
+  const el=e.target;const tg=el.closest&&el.closest('[data-id]');
+  if(tool==='select'){
+    if(el.dataset&&el.dataset.vertex!=null){snap();drag={type:'vertex',rid:el.dataset.rid,i:+el.dataset.vertex};return}
+    if(tg){const kind=tg.dataset.k,id=tg.dataset.id;selected={kind:kind==='obj'?'obj':kind,id};
+      if(kind==='obj'){const o=objById(id);drag={type:'obj',id,dx:p[0]-o.x,dy:p[1]-o.y,moved:false,snap:JSON.stringify(state)}}
+      renderPlan();renderProps();return}
+    selected=null;renderPlan();renderProps();
+    drag={type:'pan',sx:e.clientX,sy:e.clientY,tx:view.tx,ty:view.ty,click:true};svg.classList.add('panning');return
+  }
+  const pc=constrain(p);
+  if(tool==='scale'){draft=draft||{type:'scale',pts:[]};pushPt(pc);if(draft.pts.length===2)askScale();renderDraft();return}
+  if(tool==='area'){if(!draft){draft={type:'area',pts:[pc]};renderDraft();return}
+    if(draft.pts.length>=3&&dist(p,draft.pts[0])<10/view.s){closeArea();return}
+    pushPt(pc);renderDraft();return}
+  if(['recup','col_supply','col_extract','diff_supply','diff_extract','riser'].includes(tool)){
+    snap();
+    if(tool==='recup'){state.objects=state.objects.filter(o=>o.kind!=='recup'||(o.id===(recupObj()||{}).id));const r=recupObj();if(r){r.x=p[0];r.y=p[1];r.floor=f.id}else state.objects.push({id:uid(),kind:'recup',floor:f.id,x:p[0],y:p[1]});changed();setTool('select');return}
+    const [kind,side]=tool==='riser'?['riser',null]:[tool.startsWith('col')?'collector':'diffuser',tool.endsWith('supply')?'supply':'extract'];
+    const o={id:uid(),kind,floor:f.id,x:p[0],y:p[1]};if(side)o.side=side;if(kind==='riser'){o.link=null;o.side=null}
+    state.objects.push(o);if(kind==='riser'){selected={kind:'obj',id:o.id};setTool('select')}changed();return}
+  if(tool==='flex'){
+    if(!draft){const o=hitObj(p,['collector','riser']);if(!o){toast(t('err_start_col'),true);return}
+      if(o.kind==='riser'&&!rootCollector(o.id)){toast(t('err_riser'),true);return}
+      draft={type:'flex',from:o.id,pts:[[o.x,o.y]]};renderDraft();return}
+    const d=hitObj(p,['diffuser']);
+    if(d){const c=rootCollector(draft.from);if(c&&c.side!==d.side){toast(t('err_side'),true);return}
+      snap();state.routes.push({id:uid(),floor:f.id,kind:'flex',d:ui.flexD,from:draft.from,to:d.id,pts:[...draft.pts,[d.x,d.y]]});draft=null;changed();return}
+    pushPt(pc);renderDraft();return}
+  if(tool==='rigid'){
+    if(!draft){const o=hitObj(p,['recup']);if(!o){toast(t('err_start_recup'),true);return}draft={type:'rigid',from:o.id,pts:[[o.x,o.y]]};renderDraft();return}
+    if(ui.rigidKind==='internal'){const c=hitObj(p,['collector']);if(c){finishRigid(c);return}}
+    else{const w=wallHit(p);if(w){wallTail(draft.pts,w).forEach(pushRigid);finishRigid(null,true);return}}
+    orthoTail(draft.pts,p).forEach(pushRigid);renderDraft();return}
+});
+svg.addEventListener('pointermove',e=>{
+  if(pointers.has(e.pointerId))pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(!curImg())return;
+  mouse=toImg(e);
+  if(drag){
+    if(drag.type==='pinch'&&pointers.size===2){const [a,b]=[...pointers.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);const r=svg.getBoundingClientRect();zoomAt(d/drag.d,drag.cx-r.left,drag.cy-r.top);drag.d=d;return}
+    if(drag.type==='pan'){view.tx=drag.tx+e.clientX-drag.sx;view.ty=drag.ty+e.clientY-drag.sy;applyView();if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>3)drag.click=false;return}
+    if(drag.type==='obj'){const o=objById(drag.id);if(!drag.moved){undoStack.push(drag.snap);drag.moved=true}o.x=mouse[0]-drag.dx;o.y=mouse[1]-drag.dy;renderPlan();return}
+    if(drag.type==='vertex'){const r=state.routes.find(r=>r.id===drag.rid);if(r){r.pts[drag.i]=mouse.slice();renderPlan()}return}
+  }
+  if(draft)renderDraft();
+});
+function endDrag(e){pointers.delete(e.pointerId);if(drag&&drag.type==='vertex'){const r=state.routes.find(x=>x.id===drag.rid);if(r&&r.kind==='rigid'&&!r.to&&r.rkind!=='internal'&&drag.i===r.pts.length-1){const w=nearestWall(r.pts[drag.i],state.floors.find(f=>f.id===r.floor));if(w)r.pts[drag.i]=w.pt}}
+  if(drag){if(drag.type==='obj'&&drag.moved||drag.type==='vertex')changed(true);drag=null;svg.classList.remove('panning')}}
+svg.addEventListener('pointerup',endDrag);svg.addEventListener('pointercancel',endDrag);
+function closeArea(){if(!draft||draft.pts.length<3){toast(t('err_short'),true);return}snap();curFloor().areas.push({id:uid(),pts:draft.pts});draft=null;changed()}
+function finishRigid(col,atWall){
+  if(!draft)return;
+  if(ui.rigidKind==='internal'&&!col){toast(t('err_end_col'),true);return}
+  if(col)orthoTail(draft.pts,[col.x,col.y]).forEach(pushRigid);const pts=[...draft.pts];lastFinish=Date.now();
+  if(pts.length<2){toast(t('err_short'),true);return}
+  snap();state.routes.push({id:uid(),floor:curFloor().id,kind:'rigid',rkind:ui.rigidKind,d:ui.rigidD,from:draft.from,to:col?col.id:null,pts});draft=null;changed();
+}
+async function askScale(){
+  const f=curFloor();const pts=draft.pts.slice();draft=null;renderDraft();
+  const r=await modal({title:t('scale_t'),html:`<label class="fld"><span>${esc(t('wall_len'))}</span><input type="text" inputmode="decimal" name="m" value="${f.scale?f.scale.meters:''}"></label>`});
+  const m=r&&num(r.m);
+  if(m>0){snap();f.scale={p1:pts[0],p2:pts[1],meters:m};changed()}
+  setTool('select');
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Shift')shiftDown=true;
+  const tg=e.target;if(tg&&(tg.tagName==='INPUT'||tg.tagName==='SELECT'||tg.tagName==='TEXTAREA'))return;
+  if(document.body.classList.contains('admin')||$('.modalBg'))return;
+  if(e.code==='Space'){spaceDown=true;e.preventDefault();return}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();return}
+  if(e.key==='Escape'){if(draft){draft=null;renderDraft()}else if(tool!=='select')setTool('select');else{selected=null;renderPlan();renderProps()}return}
+  if((e.key==='r'||e.key==='R')&&!e.ctrlKey&&!e.metaKey&&!draft){rotateSelected();return}
+  if(e.key==='Enter'&&draft){if(draft.type==='area')closeArea();else if(draft.type==='rigid')finishRigid(null);return}
+  if(e.key==='Backspace'||e.key==='Delete'){e.preventDefault();if(draft){draft.pts.pop();if(!draft.pts.length||(draft.type!=='area'&&draft.type!=='scale'&&draft.pts.length<1))draft=null;renderDraft();return}if(selected)deleteSelected();return}
+});
+document.addEventListener('keyup',e=>{if(e.key==='Shift')shiftDown=false;if(e.code==='Space')spaceDown=false});
+window.addEventListener('blur',()=>{shiftDown=false;spaceDown=false});
+function rotateSelected(){if(!selected||selected.kind!=='obj')return;const o=objById(selected.id);if(!o||(o.kind!=='recup'&&o.kind!=='collector'))return;snap();o.rot=((o.rot||0)+90)%180;changed()}
+function deleteSelected(){
+  if(!selected)return;snap();const id=selected.id;
+  if(selected.kind==='obj'){const o=objById(id);state.objects=state.objects.filter(x=>x.id!==id);state.routes=state.routes.filter(r=>r.from!==id&&r.to!==id);
+    if(o&&o.kind==='collector')state.objects.forEach(x=>{if(x.kind==='riser'&&x.link===id){x.link=null;x.side=null;state.routes=state.routes.filter(r=>r.from!==x.id)}})}
+  else if(selected.kind==='route')state.routes=state.routes.filter(r=>r.id!==id);
+  else if(selected.kind==='area')state.floors.forEach(f=>f.areas=f.areas.filter(a=>a.id!==id));
+  selected=null;changed();
+}
+// drag & drop files
+const cw=$('#canvasWrap');
+['dragenter','dragover'].forEach(ev=>cw.addEventListener(ev,e=>{e.preventDefault();cw.classList.add('drop')}));
+['dragleave','drop'].forEach(ev=>cw.addEventListener(ev,e=>{e.preventDefault();cw.classList.remove('drop')}));
+cw.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)importPlanFile(f)});
+window.addEventListener('resize',()=>{if(curImg())renderPlan()});
+
+// ---------------------------------------------------------------- calculation
+function compute(){
+  const st=S(),res=1+st.reserve/100,W=[],lines=[],labor=[];
+  const addLine=(type,item,qty,unit,note)=>{if(!(qty>0))return;const ex=lines.find(l=>l.item===item&&l.unit===unit&&item);if(ex){ex.qty+=qty;ex.sum=ex.qty*ex.price;return}const pr=priceOf(item);lines.push({type,item,name:itemLabel(item),qty,unit,price:pr,sum:qty*pr,note})};
+  const missing=new Set();const miss=(type,d)=>missing.add(t('t_'+type)+(d?' Ø'+d:''));
+  // area / volume
+  let area=0;const noScale=new Set();
+  state.floors.forEach(f=>{const ppm=pxPerM(f);f.areas.forEach(a=>{if(!ppm){noScale.add(f.id);return}area+=polyArea(a.pts)/ppm/ppm})});
+  const areaAuto=area;if(num(state.areaManual)>0)area=num(state.areaManual);
+  const height=num(state.height);const volume=area*height;const reqAir=volume*st.ach;
+  const recup=itemById(state.recupId);
+  if(!recup)W.push(t('w_no_recup'));
+  else{ if(recup.airflow<reqAir)W.push(t('w_recup_small',{a:f0(recup.airflow),b:f0(reqAir)})); if(!recupObj())W.push(t('w_recup_unplaced')) }
+  if(!(area>0))W.push(t('w_no_area'));
+  // flex routes
+  const sides={supply:{n75:0,n90:0,cap:0},extract:{n75:0,n90:0,cap:0}};
+  const flexLen={75:0,90:0},flexCount={75:0,90:0};let flexRaw=0;
+  const colPipes={},diffPipes={};
+  state.routes.filter(r=>r.kind==='flex').forEach(r=>{
+    const f=state.floors.find(x=>x.id===r.floor);if(!pxPerM(f))noScale.add(f.id);
+    const len=routeLenM(r,f);flexRaw+=len;flexLen[r.d]=(flexLen[r.d]||0)+len;flexCount[r.d]=(flexCount[r.d]||0)+1;
+    const c=rootCollector(r.from);if(c){(colPipes[c.id]=colPipes[c.id]||[]).push(r.d);const s=sides[c.side];s['n'+r.d]++;s.cap+=r.d==90?st.cap90:st.cap75}
+    (diffPipes[r.to]=diffPipes[r.to]||[]).push(r.d);
+  });
+  state.routes.filter(r=>r.kind==='rigid').forEach(r=>{const f=state.floors.find(x=>x.id===r.floor);if(!pxPerM(f))noScale.add(f.id)});
+  noScale.forEach(id=>{const f=state.floors.find(x=>x.id===id);if(f)W.push(t('w_noscale',{floor:floorName(f)}))});
+  const need=reqAir;
+  ['supply','extract'].forEach(k=>{const s=sides[k];s.need=need;s.ok=need>0&&s.cap>=need;if(need>0&&s.cap<need&&(s.n75+s.n90>0||recup))W.push(t('w_side_low',{side:t(k),cap:f0(s.cap),need:f0(need)}))});
+  const min75=need>0?Math.ceil(need/st.cap75):0,min90=need>0?Math.ceil(need/st.cap90):0;
+  // recuperator
+  if(recup)addLine('recuperator',recup,1,'u_pcs');
+  // collectors
+  let emptyCols=0;const capsBy={};
+  state.objects.filter(o=>o.kind==='collector').forEach(o=>{const ds=colPipes[o.id]||[];if(!ds.length){o._model=null;emptyCols++;return}
+    const set=[...new Set(ds)];const rg=recup?recup.group:'';const all=itemsOf('collector').filter(c=>(+c.diameter===0||(set.length===1&&+c.diameter===set[0]))&&(!c.group||c.group===rg));
+    if(!all.length){miss('collector',set.length===1?set[0]:'');return}
+    const rd=recup?+recup.diameter:0;const fits=a=>a.some(c=>c.outlets>=ds.length);let pool=all;
+    const grp=all.filter(c=>c.group&&c.group===rg);if(fits(grp))pool=grp;const pref=pool.filter(c=>+c.inlet===rd);if(fits(pref))pool=pref;
+    const fit=pool.filter(c=>c.outlets>=ds.length).sort((a,b)=>a.outlets-b.outlets||a.price-b.price);let it,cnt=1;
+    if(fit.length)it=fit[0];else{it=all.sort((a,b)=>b.outlets-a.outlets)[0];cnt=Math.ceil(ds.length/Math.max(1,it.outlets));W.push(t('w_col_multi',{n:ds.length,c:cnt,name:it.name}))}
+    o._model=it.id;addLine('collector',it,cnt,'u_pcs');
+    const free=it.outlets*cnt-ds.length;if(free>0){const cd=+it.diameter||mode(ds);capsBy[cd]=(capsBy[cd]||0)+free}
+  });
+  if(emptyCols)W.push(t('w_col_empty',{n:emptyCols}));
+  // diffusers + plenums
+  let freeDiff=0;
+  state.objects.filter(o=>o.kind==='diffuser').forEach(o=>{const ds=diffPipes[o.id]||[];
+    const ch=itemById(o.itemId);const fixed=ch&&ch.type==='diffuser'?ch:null;let box=null;
+    if(ds.length){const set=[...new Set(ds)];if(set.length>1)W.push(t('w_plenum_mixed'));const d=set.length>1?mode(ds):set[0];
+      let pl=itemsOf('plenum').filter(p=>+p.diameter===+d||+p.diameter===0);
+      if(!pl.length)miss('plenum',d);
+      else{ if(fixed&&+fixed.diameter){const m=pl.filter(p=>+p.inlet===+fixed.diameter);if(m.some(p=>p.outlets>=ds.length))pl=m}
+        const fit=pl.filter(p=>p.outlets>=ds.length).sort((a,b)=>a.outlets-b.outlets||a.price-b.price)[0];
+        if(fit){box=fit;addLine('plenum',fit,1,'u_pcs')}
+        else{W.push(t('w_plenum_big',{n:ds.length,d}));const big=pl.sort((a,b)=>b.outlets-a.outlets)[0];box=big;addLine('plenum',big,Math.ceil(ds.length/Math.max(1,big.outlets)),'u_pcs')} }
+    } else freeDiff++;
+    const it=fixed||defaultDiffuser(o.side,box?box.inlet:0);o._box=box?box.id:null;o._diff=it?it.id:null;
+    if(it)addLine('diffuser',it,1,'u_pcs');else miss('diffuser');
+  });
+  if(freeDiff)W.push(t('w_diff_free',{n:freeDiff}));
+  // flexible pipes (coils) + rings + caps
+  [75,90].forEach(d=>{if(!flexLen[d])return;const it=pickD('flex_pipe',d);const total=flexLen[d]*res;
+    if(!it){miss('flex_pipe',d);return}const coil=it.length>0?it.length:50;addLine('flex_pipe',it,Math.ceil(total/coil),'u_coil',`${f1(total)} ${t('mm')}`)});
+  [75,90].forEach(d=>{if(!flexCount[d])return;const it=pickD('ring',d);if(!it){miss('ring',d);return}addLine('ring',it,flexCount[d]*st.ringsPerPipe,'u_pcs')});
+  Object.keys(capsBy).forEach(d=>{const it=pickD('cap',d);if(!it){miss('cap',d);return}addLine('cap',it,capsBy[d],'u_pcs')});
+  // rigid
+  const rigidBy={};let outside=0;
+  state.routes.filter(r=>r.kind==='rigid').forEach(r=>{const pts=routePts(r);const f=state.floors.find(x=>x.id===r.floor);const ppm=pxPerM(f);
+    const len=ppm?polyLen(pts)/ppm*res:0;const b=rigidBy[r.d]=rigidBy[r.d]||{pieces:0,len:0,elbows:0,grilles:0};
+    const it=pickD('rigid_pipe',r.d);const pl=it&&it.length>0?it.length:1;b.pieces+=len>0?Math.ceil(len/pl):0;b.len+=len;b.elbows+=turns(pts);
+    if(r.rkind!=='internal'){b.grilles++;outside++}});
+  Object.keys(rigidBy).forEach(d=>{const b=rigidBy[d];
+    const p=pickD('rigid_pipe',d);if(p)addLine('rigid_pipe',p,b.pieces,'u_pcs',`${f1(b.len)} ${t('mm')}`);else miss('rigid_pipe',d);
+    if(b.elbows){const e=pickD('elbow',d);if(e)addLine('elbow',e,b.elbows,'u_pcs');else miss('elbow',d)}
+    if(b.grilles){const g=pickD('grille',d);if(g)addLine('grille',g,b.grilles,'u_pcs');else miss('grille',d)}});
+  if(recup&&!outside)W.push(t('w_no_outside'));
+  // extras
+  Object.keys(state.extras||{}).forEach(id=>{const it=itemById(id);const q=Math.round(num(state.extras[id]));if(it&&q>0)addLine(it.type,it,q,'u_pcs')});
+  state.objects.filter(o=>o.kind==='riser'&&!rootCollector(o.id)).length&&W.push(t('w_riser'));
+  if(missing.size)W.push(t('w_missing',{what:[...missing].join(', ')}));
+  // labor
+  const flexM=Math.round(flexRaw*res*10)/10;
+  if(flexM>0)labor.push({name:t('lab_flex'),qty:flexM,unit:'u_m',price:st.laborFlexPerM,sum:flexM*st.laborFlexPerM});
+  if(recup)labor.push({name:t('lab_recup'),qty:1,unit:'u_pcs',price:st.laborRecup,sum:st.laborRecup});
+  if(outside)labor.push({name:t('lab_out'),qty:outside,unit:'u_pcs',price:st.laborOutside,sum:outside*st.laborOutside});
+  const order=TYPES;lines.sort((a,b)=>order.indexOf(a.type)-order.indexOf(b.type));
+  const mat=lines.reduce((s,l)=>s+l.sum,0),lab=labor.reduce((s,l)=>s+l.sum,0),net=mat+lab,vat=net*st.vat/100;
+  return{area,areaAuto,height,volume,reqAir,recup,sides,min75,min90,need,lines,labor,mat,lab,net,vat,gross:net+vat,warnings:W,flexLen,flexM};
+}
+function mode(arr){const c={};arr.forEach(x=>c[x]=(c[x]||0)+1);return +Object.keys(c).sort((a,b)=>c[b]-c[a]||b-a)[0]}
+function defaultDiffuser(side,dia){const L=itemsOf('diffuser');const by=a=>a.sort((x,y)=>x.price-y.price)[0];const okD=d=>!+dia||!+d.diameter||+d.diameter===+dia;
+  return by(L.filter(d=>d.kind===side&&okD(d)))||by(L.filter(d=>d.kind==='any'&&okD(d)))||by(L.filter(d=>d.kind===side))||by(L.filter(d=>d.kind==='any'))||L[0]}
+
+// ---------------------------------------------------------------- rendering: header, side, props
+function changed(keepView){scheduleSave();renderAll()}
+function renderAll(){applyI18n();renderSteps();renderFloorTabs();renderSide();renderPlan();renderProps();renderHint();if(ui.step===5)renderEstimate();
+  $('#demoBadge').innerHTML=DATA.demo?`<span class="demo">${esc(t('demo_badge'))}</span>`:'';
+  $('#zoomBar [data-act=undo]').disabled=!undoStack.length&&!draft}
+function renderSteps(){
+  const c=compute();const done={1:state.floors.some(f=>f.imageId),2:c.area>0&&state.floors.every(f=>!f.imageId||f.scale),3:!!c.recup,4:state.routes.some(r=>r.kind==='flex'),5:false};
+  $('#steps').innerHTML=[1,2,3,4,5].map(i=>`<button data-act="step" data-s="${i}" class="${ui.step===i?'on':''} ${done[i]&&ui.step!==i?'done':''}"><span class="n">${done[i]&&ui.step!==i?'✓':i}</span><span class="lbl">${esc(t('s'+i))}</span></button>`).join('');
+  document.body.classList.toggle('est',ui.step===5);
+}
+function renderFloorTabs(){
+  $('#floorTabs').innerHTML=state.floors.map(f=>`<button data-act="floor" data-id="${f.id}" class="${f.id===ui.floorId?'on':''}">${esc(floorName(f))}</button>`).join('');
+  $('#floorTabs').style.display=state.floors.length>1?'flex':'none';
+}
+function summaryHTML(c){
+  return `<div class="sum">
+   <div class="row"><span>${esc(t('area'))}</span><b>${c.area>0?f1(c.area)+' '+t('m2'):'—'}</b></div>
+   <div class="row"><span>${esc(t('volume'))}</span><b>${c.volume>0?f0(c.volume)+' '+t('m3'):'—'}</b></div>
+   <div class="row"><span>${esc(t('req_air'))} (${esc(t('ach_note',{ach:f1(S().ach)}))})</span><b>${c.reqAir>0?f0(c.reqAir)+' '+t('m3h'):'—'}</b></div>
+   <div class="row"><span>${esc(t('recuperator'))}</span><b>${c.recup?esc(c.recup.name)+' · '+f0(c.recup.airflow)+' '+t('m3h'):'—'}</b></div>
+  </div>`;
+}
+function sideCheckHTML(c,k){const s=c.sides[k];const ok=s.ok;
+  return `<div class="chk ${s.n75+s.n90===0?'':ok?'ok':'bad'}"><div class="t"><span class="sw c" style="background:${SIDE_COL[k]}"></span>${esc(t(k))} <span class="mut" style="margin-left:auto;font-weight:500">${s.n75}×Ø75 + ${s.n90}×Ø90</span></div>
+  <div>${f0(s.cap)} ${t('m3h')} · <span class="mut">${esc(t('need',{v:f0(c.need)}))}</span> ${s.n75+s.n90===0?'':ok?'<span class="tag ok">✓</span>':'<span class="tag bad">!</span>'}</div></div>`}
+function toolBtn(id,label,sw){return `<button class="btn tool ${tool===id?'on':''}" data-act="tool" data-t="${id}">${sw||''}<span>${esc(label)}</span></button>`}
+function renderSide(){
+  const el=$('#side');const c=compute();const f=curFloor();let h='';
+  if(ui.step===1){
+    h+=`<h2>${esc(t('s1'))}</h2><p class="hint">${esc(t('plan_hint'))}</p><h3>${esc(t('floors'))}</h3>`;
+    state.floors.forEach(fl=>{h+=`<div class="card floorRow ${fl.id===ui.floorId?'on':''}"><div class="nm" data-act="floor" data-id="${fl.id}">${esc(floorName(fl))}<div class="st">${fl.imageId?'<span class="tag ok">'+esc(t('plan_ok'))+'</span>':'<span class="tag">'+esc(t('plan_none'))+'</span>'}</div></div>
+      <button class="btn sm" data-act="uploadFor" data-id="${fl.id}">${esc(fl.imageId?t('replace_plan'):t('upload_plan'))}</button>
+      <button class="btn sm" data-act="renameFloor" data-id="${fl.id}" title="${esc(t('rename'))}">✎</button>
+      ${state.floors.length>1?`<button class="btn sm danger" data-act="delFloor" data-id="${fl.id}" title="${esc(t('del'))}">✕</button>`:''}</div>`});
+    h+=`<button class="btn wide" data-act="addFloor" style="margin-top:6px">${esc(t('add_floor'))}</button>`;
+    h+=`<h3>${esc(t('project'))}</h3><div class="grid2"><button class="btn" data-act="saveProj">${esc(t('save_project'))}</button><button class="btn" data-act="openProj">${esc(t('open_project'))}</button></div>
+      <button class="btn wide danger" data-act="newProj" style="margin-top:6px">${esc(t('new_project'))}</button><p class="hint">${esc(t('autosave'))}</p>`;
+  }
+  if(ui.step===2){
+    const ppm=pxPerM(f);
+    h+=`<h2>${esc(t('s2'))}${state.floors.length>1?' · '+esc(floorName(f)):''}</h2>
+      <h3>${esc(t('scale_t'))}</h3><p class="hint">${esc(t('scale_hint'))}</p>
+      <div style="display:flex;gap:8px;align-items:center"><button class="btn ${tool==='scale'?'on':''}" data-act="tool" data-t="scale">📏 ${esc(t('scale_btn'))}</button>
+      ${f.scale?`<span class="tag ok">${esc(t('scale_ok',{m:f1(f.scale.meters)}))}</span>`:`<span class="tag warn">${esc(t('scale_none'))}</span>`}</div>
+      <h3>${esc(t('area_t'))}</h3><p class="hint">${esc(t('area_hint'))}</p>
+      <button class="btn ${tool==='area'?'on':''}" data-act="tool" data-t="area">⬠ ${esc(t('area_btn'))}</button>`;
+    f.areas.forEach((a,i)=>{h+=`<div class="card" style="display:flex;align-items:center;gap:8px;padding:6px 10px"><span>${esc(t('contour',{n:i+1}))}</span><b style="margin-left:auto">${ppm?f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'):'—'}</b><button class="btn sm danger" data-act="delArea" data-id="${a.id}">✕</button></div>`});
+    h+=`<label class="fld"><span>${esc(t('area_total'))}</span><b>${c.areaAuto>0?f1(c.areaAuto)+' '+t('m2'):'—'}</b></label>
+      <label class="fld"><span>${esc(t('area_manual'))}</span><input type="text" inputmode="decimal" data-bind="areaManual" value="${esc(state.areaManual)}"></label>
+      <label class="fld"><span>${esc(t('height'))}</span><input type="text" inputmode="decimal" data-bind="height" value="${esc(state.height)}"></label>`;
+    h+=`<div id="sumBox">${summaryHTML(c)}</div>`;
+  }
+  if(ui.step===3){
+    h+=`<h2>${esc(t('s3'))}</h2><p class="hint">${esc(t('recup_hint'))}</p>`;
+    if(state.recupId)h+=`<button class="btn wide ${tool==='recup'?'on':'pri'}" data-act="tool" data-t="recup" style="margin-bottom:8px">${recupObj()?'✓ '+esc(t('recup_placed')):'▣ '+esc(t('place_recup'))}</button>`;
+    const all=itemsOf('recuperator');const groups=[...new Set(all.map(r=>r.group).filter(Boolean))];
+    if(groups.length>1)h+=`<div class="chips">${['',...groups].map(g=>`<button class="chip ${ui.recupGroup===g?'on':''}" data-act="recGroup" data-g="${esc(g)}">${esc(g?t('g_'+g)!=='g_'+g?t('g_'+g):g:t('g_all'))}</button>`).join('')}</div>`;
+    const L=all.filter(r=>!ui.recupGroup||r.group===ui.recupGroup).sort((a,b)=>{const sa=c.reqAir>0&&a.airflow<c.reqAir,sb=c.reqAir>0&&b.airflow<c.reqAir;return sa-sb||a.airflow-b.airflow||a.price-b.price});if(!L.length)h+=`<p class="hint">${esc(t('no_items'))}</p>`;
+    L.forEach(r=>{const small=c.reqAir>0&&r.airflow<c.reqAir;h+=`<div class="card recup ${small?'dim':''} ${state.recupId===r.id?'sel':''}" data-act="pickRecup" data-id="${r.id}">
+      <div><div class="nm">${esc(r.name)}</div><div class="mut" style="font-size:12px">${esc(t('airflow'))}: ${f0(r.airflow)} ${t('m3h')} · Ø${r.diameter}${r.group&&t('g_'+r.group)!=='g_'+r.group?' · '+esc(t('g_'+r.group)):''} ${small?'· '+esc(t('too_small')):''}</div></div><div class="pr">${money(priceOf(r))}</div></div>`});
+    h+=`<div id="sumBox">${summaryHTML(c)}</div>`;
+  }
+  if(ui.step===4){
+    const sq=(c,r)=>`<span class="sw ${r?'c':''}" style="background:${c}"></span>`;
+    h+=`<h2>${esc(t('s4'))}${state.floors.length>1?' · '+esc(floorName(f)):''}</h2>
+      <div class="grid2">${toolBtn('select','↖ '+t('tool_select'))}${toolBtn('recup','▣ '+t(recupObj()?'move_recup':'tool_recup'))}</div>
+      <h3>${esc(t('collectors'))}</h3><div class="grid2">${toolBtn('col_supply',t('col_supply'),sq(SIDE_COL.supply))}${toolBtn('col_extract',t('col_extract'),sq(SIDE_COL.extract))}</div>
+      <h3>${esc(t('diffusers'))}</h3><div class="grid2">${toolBtn('diff_supply',t('diff_supply'),sq(SIDE_COL.supply,1))}${toolBtn('diff_extract',t('diff_extract'),sq(SIDE_COL.extract,1))}</div>
+      ${state.floors.length>1?`<div style="margin-top:6px">${toolBtn('riser','↕ '+t('riser'))}</div>`:''}
+      <h3>${esc(t('pipes'))}</h3>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><span class="mut">${esc(t('diameter'))}</span><div class="seg">${[75,90].map(d=>`<button data-act="flexD" data-d="${d}" class="${ui.flexD===d?'on':''}">Ø${d}</button>`).join('')}</div></div>
+      ${toolBtn('flex','〰 '+t('flex'))}
+      <h3>${esc(t('rigid_t'))}</h3>
+      <label class="fld"><span>${esc(t('rigid_kind'))}</span><select data-bind="rigidKind">${['intake','exhaust','internal'].map(k=>`<option value="${k}" ${ui.rigidKind===k?'selected':''}>${esc(t('rk_'+k))}</option>`).join('')}</select></label>
+      <label class="fld"><span>${esc(t('diameter'))}</span><select data-bind="rigidD">${rigidDiams().map(d=>`<option value="${d}" ${ui.rigidD===d?'selected':''}>Ø${d}</option>`).join('')}</select></label>
+      ${toolBtn('rigid','▬ '+t('rigid'),sq(RIGID_COL[ui.rigidKind]))}
+      <h3>${esc(t('checks'))}</h3>${sideCheckHTML(c,'supply')}${sideCheckHTML(c,'extract')}
+      ${c.need>0?`<p class="hint">${esc(t('min_pipes',{a:c.min75,b:c.min90}))}</p>`:''}`;
+  }
+  if(ui.step===5){
+    h+=`<h2>${esc(t('s5'))}</h2><h3>${esc(t('client_t'))}</h3>
+      ${['name','phone','email','address'].map(k=>`<label class="fld"><span>${esc(t('c_'+k))}</span><input type="text" data-bind="client.${k}" value="${esc(state.client[k])}"></label>`).join('')}
+      <h3>${esc(t('extras_t'))}</h3><p class="hint">${esc(t('extras_hint'))}</p>`;
+    const rd=c.recup?+c.recup.diameter:0;
+    const sil=itemsOf('silencer');const silM=sil.filter(i=>+i.diameter===rd);const ex=[...(silM.length?silM:sil).sort((a,b)=>a.diameter-b.diameter||a.price-b.price),...itemsOf('accessory')];
+    ex.forEach(it=>{h+=`<div class="card" style="display:flex;align-items:center;gap:8px;padding:6px 10px"><div style="flex:1;font-size:13px">${esc(it.name)}<div class="mut" style="font-size:12px">${esc(t('t_'+it.type))} · ${money(priceOf(it))}</div></div><input type="number" min="0" step="1" style="width:64px" data-bind="extra" data-id="${it.id}" value="${state.extras[it.id]||0}"></div>`});
+    h+=`<button class="btn pri wide" data-act="pdf" style="margin-top:14px">⬇ ${esc(t('pdf_btn'))}</button>`;
+  }
+  h+=`<div class="nav">${ui.step>1?`<button class="btn" data-act="step" data-s="${ui.step-1}">${esc(t('prev'))}</button>`:'<span></span>'}${ui.step<5?`<button class="btn pri" data-act="step" data-s="${ui.step+1}">${esc(t('next'))}</button>`:''}</div>`;
+  const st=el.scrollTop;el.innerHTML=h;el.scrollTop=st;
+}
+function rigidDiams(){const ds=[...new Set(itemsOf('rigid_pipe').map(i=>+i.diameter))].sort((a,b)=>a-b);if(!ds.includes(ui.rigidD))ds.push(ui.rigidD);return ds.sort((a,b)=>a-b)}
+function sizeRow(o){const it=objItem(o);const d=parseDims(it&&it.dims);
+  return `<div class="row"><span>${esc(t('footprint'))}</span><b>${d?(o.rot%180?d[1]+'×'+d[0]:d[0]+'×'+d[1])+' mm':'—'}</b></div>${d&&!pxPerM(state.floors.find(f=>f.id===o.floor))?`<p class="hint" style="margin:2px 0">${esc(t('need_scale'))}</p>`:''}<button class="btn sm" data-act="rotSel" style="margin-top:4px">↻ ${esc(t('rotate'))}</button> `}
+function renderProps(){
+  const el=$('#props');if(!selected||ui.step===5){el.innerHTML='';return}
+  let h='';const del=`<button class="btn sm danger" data-act="delSel" style="margin-top:8px">✕ ${esc(t('del_sel'))}</button>`;
+  if(selected.kind==='obj'){const o=objById(selected.id);if(!o){selected=null;el.innerHTML='';return}
+    const cnt=state.routes.filter(r=>r.kind==='flex'&&(r.to===o.id||rootCollector(r.from)===o&&o.kind==='collector')).length;
+    if(o.kind==='recup'){const r=itemById(state.recupId);h=`<h4>${esc(t('recuperator'))}</h4><div class="row"><span>${esc(t('model'))}</span><b>${esc(r?r.name:'—')}</b></div>`+sizeRow(o)}
+    if(o.kind==='collector'){compute();const m=itemById(o._model);h=`<h4><span class="sw" style="background:${SIDE_COL[o.side]}"></span>${esc(t(o.side==='supply'?'col_supply':'col_extract'))}</h4>
+      <div class="row"><span>${esc(t('connected'))}</span><b>${cnt}</b></div><div class="row"><span>${esc(t('model'))}</span><b>${m?esc(m.name):'—'}</b></div>
+      ${m?`<div class="row"><span>${esc(t('caps'))}</span><b>${Math.max(0,m.outlets-cnt)}</b></div>`:''}`+sizeRow(o)}
+    if(o.kind==='diffuser'){compute();const L=itemsOf('diffuser').filter(d=>d.kind===o.side||d.kind==='any').sort((a,b)=>a.diameter-b.diameter||a.price-b.price);const auto=itemById(o._diff);const box=itemById(o._box);
+      const ds=state.routes.filter(r=>r.to===o.id).map(r=>r.d);
+      h=`<h4><span class="sw c" style="background:${SIDE_COL[o.side]}"></span>${esc(t('diffuser'))} · ${esc(t(o.side))}</h4>
+      <div class="row"><span>${esc(t('side'))}</span><div class="seg">${['supply','extract'].map(s=>`<button data-act="diffSide" data-s="${s}" class="${o.side===s?'on':''}">${esc(t(s))}</button>`).join('')}</div></div>
+      <div class="row"><span>${esc(t('model'))}</span><select data-bind="diffModel"><option value="">${esc(t('auto'))}${!o.itemId&&auto?': '+esc(auto.name):''}</option>${L.map(d=>`<option value="${d.id}" ${o.itemId===d.id?'selected':''}>${esc(d.name)} · ${money(priceOf(d))}</option>`).join('')}</select></div>
+      <div class="row"><span>${esc(t('connected'))}</span><b>${ds.length?ds.map(d=>'Ø'+d).join(', '):'0'}</b></div>
+      <div class="row"><span>${esc(t('plenum'))}</span><b>${box?esc(box.name):'—'}</b></div>`}
+    if(o.kind==='riser'){const cols=state.objects.filter(x=>x.kind==='collector'&&x.floor!==o.floor);
+      h=`<h4>↕ ${esc(t('riser_o'))}</h4><div class="row"><span>${esc(t('link_col'))}</span><select data-bind="riserLink"><option value="">${esc(t('not_linked'))}</option>${cols.map(x=>`<option value="${x.id}" ${o.link===x.id?'selected':''}>${esc(t(x.side==='supply'?'col_supply':'col_extract'))} · ${esc(floorName(state.floors.find(f=>f.id===x.floor)))}</option>`).join('')}</select></div>`}
+    h+=del;
+  } else if(selected.kind==='route'){const r=state.routes.find(x=>x.id===selected.id);if(!r){selected=null;el.innerHTML='';return}
+    const len=routeLenM(r);
+    if(r.kind==='flex'){h=`<h4><span class="sw" style="background:${SIDE_COL[routeSide(r)]||'#64748b'}"></span>${esc(t('route_flex'))}</h4>
+      <div class="row"><span>${esc(t('diameter'))}</span><div class="seg">${[75,90].map(d=>`<button data-act="routeD" data-d="${d}" class="${r.d===d?'on':''}">Ø${d}</button>`).join('')}</div></div>
+      <div class="row"><span>${esc(t('length'))}</span><b>${len?f1(len)+' '+t('mm'):'—'}</b></div>`}
+    else{h=`<h4><span class="sw" style="background:${RIGID_COL[r.rkind]}"></span>${esc(t('route_rigid'))}</h4>
+      <div class="row"><span>${esc(t('rigid_kind'))}</span><select data-bind="routeKind" ${r.to?'disabled':''}>${['intake','exhaust','internal'].map(k=>`<option value="${k}" ${r.rkind===k?'selected':''} ${k==='internal'&&!r.to?'disabled':''}>${esc(t('rk_'+k))}</option>`).join('')}</select></div>
+      <div class="row"><span>${esc(t('diameter'))}</span><select data-bind="routeRD">${rigidDiams().map(d=>`<option value="${d}" ${r.d===d?'selected':''}>Ø${d}</option>`).join('')}</select></div>
+      <div class="row"><span>${esc(t('length'))}</span><b>${len?f1(len)+' '+t('mm'):'—'}</b></div><div class="row"><span>${esc(t('elbows'))}</span><b>${turns(routePts(r))}</b></div>`}
+    h+=del;
+  } else if(selected.kind==='area'){const f=state.floors.find(f=>f.areas.some(a=>a.id===selected.id));const a=f&&f.areas.find(a=>a.id===selected.id);if(!a){selected=null;el.innerHTML='';return}
+    const ppm=pxPerM(f);h=`<h4>⬠ ${esc(t('area'))}</h4><div class="row"><span>${esc(t('area'))}</span><b>${ppm?f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'):'—'}</b></div>`+del}
+  el.innerHTML=h;
+}
+
+// ---------------------------------------------------------------- estimate view
+function estimateRows(c){
+  const rows=[];
+  if(c.lines.length){rows.push({grp:t('materials')});c.lines.forEach(l=>rows.push({name:t('t_'+l.type)+' — '+l.name+(l.note?` (${l.note})`:''),qty:l.qty,unit:t(l.unit),price:l.price,sum:l.sum}));rows.push({tot:t('mat_total'),sum:c.mat})}
+  if(c.labor.length){rows.push({grp:t('labor')});c.labor.forEach(l=>rows.push({name:l.name,qty:l.qty,unit:t(l.unit),price:l.price,sum:l.sum}));rows.push({tot:t('lab_total'),sum:c.lab})}
+  rows.push({tot:t('subtotal'),sum:c.net,strong:true});rows.push({tot:t('vat',{v:f1(S().vat)}),sum:c.vat});rows.push({grand:t('total'),sum:c.gross});
+  return rows;
+}
+function rowHTML(r){
+  if(r.grp)return `<tr class="grp"><td colspan="5">${esc(r.grp)}</td></tr>`;
+  if(r.tot)return `<tr class="tot"><td colspan="4" class="n">${esc(r.tot)}</td><td class="n">${money(r.sum)}</td></tr>`;
+  if(r.grand)return `<tr class="grand"><td colspan="4" class="n">${esc(r.grand)}</td><td class="n">${money(r.sum)}</td></tr>`;
+  return `<tr><td>${esc(r.name)}</td><td class="n">${Number.isInteger(r.qty)?r.qty:f1(r.qty)}</td><td>${esc(r.unit)}</td><td class="n">${money(r.price)}</td><td class="n">${money(r.sum)}</td></tr>`;
+}
+const theadHTML=()=>`<thead><tr><th>${esc(t('col_item'))}</th><th class="n">${esc(t('col_qty'))}</th><th>${esc(t('col_unit'))}</th><th class="n">${esc(t('col_price'))}</th><th class="n">${esc(t('col_sum'))}</th></tr></thead>`;
+function kpisHTML(c){return `<div class="kpis"><div class="kpi"><div class="l">${esc(t('kpi_area'))}</div><div class="v">${c.area>0?f1(c.area)+' '+t('m2'):'—'}</div></div>
+  <div class="kpi"><div class="l">${esc(t('kpi_vol'))}</div><div class="v">${c.volume>0?f0(c.volume)+' '+t('m3'):'—'}</div></div>
+  <div class="kpi"><div class="l">${esc(t('kpi_air'))}</div><div class="v">${c.reqAir>0?f0(c.reqAir)+' '+t('m3h'):'—'}</div></div>
+  <div class="kpi"><div class="l">${esc(t('kpi_recup'))}</div><div class="v" style="font-size:14px">${c.recup?esc(c.recup.name)+'<br><span class="mut" style="font-weight:500">'+f0(c.recup.airflow)+' m³/h</span>':'—'}</div></div></div>`}
+function warnsHTML(c){return c.warnings.length?`<div class="warns"><b>${esc(t('warnings'))}</b><ul>${c.warnings.map(w=>`<li>${esc(w)}</li>`).join('')}</ul></div>`:''}
+function renderEstimate(){
+  const c=compute();
+  $('#estimateView').innerHTML=`<div class="estWrap"><div class="estHead"><div><h2 style="font-size:22px">${esc(t('est_title'))}</h2><div class="mut">${new Date().toLocaleDateString(loc())}</div></div>
+   <button class="btn pri" data-act="pdf">⬇ ${esc(t('pdf_btn'))}</button></div>
+   ${kpisHTML(c)}<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${sideCheckHTML(c,'supply')}${sideCheckHTML(c,'extract')}</div>${warnsHTML(c)}
+   <table class="est">${theadHTML()}<tbody>${estimateRows(c).map(rowHTML).join('')}</tbody></table>
+   ${DATA.demo?`<p class="hint" style="margin-top:10px"><span class="demo">${esc(t('demo_badge'))}</span></p>`:''}</div>`;
+}
+
+// ---------------------------------------------------------------- PDF
+async function planPNG(f,maxW){
+  const img=images[f.imageId];if(!img)return null;const k=Math.max(img.w,img.h)/1300;
+  const s=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${img.w}" height="${img.h}" viewBox="0 0 ${img.w} ${img.h}"><rect width="100%" height="100%" fill="#fff"/><image href="${img.src}" xlink:href="${img.src}" width="${img.w}" height="${img.h}"/>${overlayMarkup(f,k,{print:true})}</svg>`;
+  const url=URL.createObjectURL(new Blob([s],{type:'image/svg+xml'}));
+  try{const im=await loadImg(url);const sc=Math.min(1,maxW/img.w);const c=document.createElement('canvas');c.width=Math.round(img.w*sc);c.height=Math.round(img.h*sc);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);return{src:c.toDataURL('image/jpeg',.88),w:c.width,h:c.height}}
+  finally{URL.revokeObjectURL(url)}
+}
+async function makePDF(){
+  busy(true,t('pdf_making'));
+  try{
+    await Promise.all([loadScript(LIB.jspdf),loadScript(LIB.h2c)]);
+    const c=compute();const W=794,H=1123;
+    const host=document.createElement('div');host.style.cssText='position:fixed;left:-20000px;top:0;';document.body.appendChild(host);
+    const pages=[];
+    const mkPage=(land)=>{const p=document.createElement('div');p.dataset.land=land?1:'';p.style.cssText=`width:${land?H:W}px;height:${land?W:H}px;background:#fff;padding:48px 52px;box-sizing:border-box;font:12px/1.45 Inter,Arial,sans-serif;color:#0f172a;position:relative;overflow:hidden`;host.appendChild(p);pages.push(p);return p};
+    const footer=p=>{const d=document.createElement('div');d.style.cssText='position:absolute;left:52px;right:52px;bottom:28px;display:flex;justify-content:space-between;color:#94a3b8;font-size:10px';d.innerHTML=`<span>${esc(t('est_title'))}</span><span class="pg"></span>`;p.appendChild(d)};
+    const cl=state.client;const date=new Date().toLocaleDateString(loc());
+    // page 1: header + summary + table
+    let p=mkPage();
+    p.innerHTML=`<style>.pt{width:100%;border-collapse:collapse;font-size:11px}.pt th{text-align:left;color:#64748b;font-weight:600;font-size:10px;padding:5px 6px;border-bottom:1px solid #cbd5e1}.pt td{padding:5px 6px;border-bottom:1px solid #eef2f7;vertical-align:top}.pt .n{text-align:right;white-space:nowrap}.pt tr.grp td{background:#f1f5f9;font-weight:700}.pt tr.tot td{font-weight:600}.pt tr.grand td{font-weight:800;font-size:13px;border-top:2px solid #0f172a}</style>
+     <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0f766e;padding-bottom:12px;margin-bottom:14px"><div><div style="font-size:22px;font-weight:800">${esc(t('est_title'))}</div><div style="color:#64748b">${esc(t('date'))}: ${date}</div></div>
+     <div style="text-align:right;font-size:11px">${['name','phone','email','address'].filter(k=>cl[k]).map(k=>`<div><span style="color:#64748b">${esc(t('c_'+k))}:</span> <b>${esc(cl[k])}</b></div>`).join('')}</div></div>
+     <table style="width:100%;font-size:11px;margin-bottom:12px"><tr>
+      <td><span style="color:#64748b">${esc(t('kpi_area'))}</span><br><b style="font-size:14px">${c.area>0?f1(c.area)+' '+t('m2'):'—'}</b></td>
+      <td><span style="color:#64748b">${esc(t('height'))}</span><br><b style="font-size:14px">${f1(c.height)} ${t('mm')}</b></td>
+      <td><span style="color:#64748b">${esc(t('kpi_vol'))}</span><br><b style="font-size:14px">${c.volume>0?f0(c.volume)+' '+t('m3'):'—'}</b></td>
+      <td><span style="color:#64748b">${esc(t('kpi_air'))}</span><br><b style="font-size:14px">${c.reqAir>0?f0(c.reqAir)+' '+t('m3h'):'—'}</b></td></tr>
+      <tr><td colspan="2" style="padding-top:8px"><span style="color:#64748b">${esc(t('kpi_recup'))}</span><br><b>${c.recup?esc(c.recup.name)+' · '+f0(c.recup.airflow)+' '+t('m3h'):'—'}</b></td>
+      ${['supply','extract'].map(k=>{const s=c.sides[k];return `<td style="padding-top:8px"><span style="color:${SIDE_COL[k]};font-weight:700">${esc(t(k))}</span><br><b>${s.n75}×Ø75 + ${s.n90}×Ø90 = ${f0(s.cap)} ${t('m3h')}</b> ${s.ok?'✓':'⚠'}</td>`}).join('')}</tr></table>
+     ${c.warnings.length?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:6px 10px;margin-bottom:12px;font-size:10.5px;color:#78350f"><b>${esc(t('warnings'))}:</b> ${c.warnings.map(esc).join(' · ')}</div>`:''}
+     <table class="pt">${theadHTML()}<tbody class="rows"></tbody></table>`;
+    footer(p);
+    let tb=p.querySelector('tbody.rows');const limit=H-70;
+    for(const r of estimateRows(c)){
+      tb.insertAdjacentHTML('beforeend',rowHTML(r));
+      const tbl=tb.closest('table');if(tbl.offsetTop+tbl.offsetHeight>limit){tb.lastElementChild.remove();
+        p=mkPage();p.innerHTML=`${pages[0].querySelector('style').outerHTML}<table class="pt">${theadHTML()}<tbody class="rows"></tbody></table>`;footer(p);tb=p.querySelector('tbody.rows');tb.insertAdjacentHTML('beforeend',rowHTML(r))}
+    }
+    // plan pages
+    const legend=`<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:#475569;margin-top:8px">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${SIDE_COL.supply};vertical-align:-1px"></span> ${esc(t('supply'))}</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${SIDE_COL.extract};vertical-align:-1px"></span> ${esc(t('extract'))}</span>
+      <span><b style="color:${RIGID_COL.intake}">▬</b> ${esc(t('rk_intake'))}</span><span><b style="color:${RIGID_COL.exhaust}">▬</b> ${esc(t('rk_exhaust'))}</span><span><b style="color:${RIGID_COL.internal}">▬</b> ${esc(t('rk_internal'))}</span>
+      <span>K·n — ${esc(t('collector'))}</span><span>REK — ${esc(t('recuperator'))}</span></div>`;
+    for(const f of state.floors){if(!f.imageId)continue;const im=await planPNG(f,2000);if(!im)continue;
+      const land=im.w>im.h*1.1;p=mkPage(land);const aw=(land?H:W)-104,ah=(land?W:H)-150;const sc=Math.min(aw/im.w,ah/im.h);
+      p.innerHTML=`<div style="font-size:16px;font-weight:700;margin-bottom:10px">${esc(t('s1'))} — ${esc(floorName(f))}</div><img src="${im.src}" style="width:${Math.round(im.w*sc)}px;height:${Math.round(im.h*sc)}px;border:1px solid #e2e8f0;display:block">${legend}`;footer(p);
+      await new Promise(r=>{const i=p.querySelector('img');if(i.complete)r();else{i.onload=r;i.onerror=r}});}
+    pages.forEach((pg,i)=>pg.querySelector('.pg').textContent=`${i+1} / ${pages.length}`);
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
+    for(let i=0;i<pages.length;i++){const cv=await html2canvas(pages[i],{scale:2,backgroundColor:'#fff',logging:false,useCORS:true});const land=!!pages[i].dataset.land;if(i)pdf.addPage('a4',land?'landscape':'portrait');pdf.addImage(cv.toDataURL('image/jpeg',.9),'JPEG',0,0,land?297:210,land?210:297)}
+    host.remove();
+    const blob=pdf.output('blob');busy(false);
+    const name=(t('est_title')+(cl.name?' - '+cl.name:'')).replace(/[\\/:*?"<>|]/g,'')+'.pdf';
+    if(await saveBlob(blob,name))toast(t('pdf_done'));
+  }catch(e){console.error(e);busy(false);toast(String(e.message||e),true)}
+}
+
+// ---------------------------------------------------------------- actions
+const ACT={
+  step:b=>{const prev=ui.step;ui.step=+b.dataset.s;const allowed={2:['scale','area'],3:['recup'],4:['recup','col_supply','col_extract','diff_supply','diff_extract','riser','flex','rigid']};
+    if(!(allowed[ui.step]||[]).includes(tool))tool='select';draft=null;if(ui.step===5)selected=null;setTool(tool);renderAll();if(prev===5&&ui.step<5)requestAnimationFrame(fitView)},
+  floor:b=>{ui.floorId=b.dataset.id;selected=null;draft=null;renderAll();requestAnimationFrame(fitView)},
+  upload:()=>{$('#fileIn').click()},
+  uploadFor:b=>{ui.floorId=b.dataset.id;renderAll();requestAnimationFrame(fitView);$('#fileIn').click()},
+  addFloor:()=>{snap();const f={id:uid(),name:'',imageId:null,scale:null,areas:[]};state.floors.push(f);ui.floorId=f.id;changed()},
+  renameFloor:async b=>{const f=state.floors.find(x=>x.id===b.dataset.id);const r=await modal({title:t('rename'),html:`<label class="fld"><span>${esc(t('floor_name'))}</span><input type="text" name="n" value="${esc(floorName(f))}"></label>`});if(r){snap();f.name=r.n.trim();changed()}},
+  delFloor:async b=>{if(!(await modal({title:t('del'),html:`<p class="hint">${esc(t('confirm_del_floor'))}</p>`,okText:t('del')})))return;snap();const id=b.dataset.id;state.floors=state.floors.filter(f=>f.id!==id);
+    const gone=new Set(state.objects.filter(o=>o.floor===id).map(o=>o.id));state.objects=state.objects.filter(o=>o.floor!==id);state.routes=state.routes.filter(r=>r.floor!==id&&!gone.has(r.from)&&!gone.has(r.to));
+    state.objects.forEach(o=>{if(o.kind==='riser'&&gone.has(o.link)){o.link=null;o.side=null}});if(ui.floorId===id)ui.floorId=state.floors[0].id;selected=null;changed();requestAnimationFrame(fitView)},
+  newProj:async()=>{if(!(await modal({title:t('new_project'),html:`<p class="hint">${esc(t('confirm_new'))}</p>`,okText:t('yes')})))return;state=newState();images={};undoStack=[];ui.floorId=state.floors[0].id;ui.step=1;selected=null;draft=null;changed()},
+  saveProj:async()=>{const blob=new Blob([JSON.stringify({app:'recu',v:1,state,images:usedImages()})],{type:'application/json'});await saveBlob(blob,'rekuperacija-projekts.json')},
+  openProj:()=>$('#projIn').click(),
+  tool:b=>{const tl=b.dataset.t;if(tl!=='select'&&!curImg()){toast(t('err_noimg'),true);return}setTool(tl)},
+  flexD:b=>{ui.flexD=+b.dataset.d;renderSide()},
+  pickRecup:b=>{snap();state.recupId=b.dataset.id;syncRigidD();if(!recupObj()&&curImg())setTool('recup');changed()},
+  recGroup:b=>{ui.recupGroup=b.dataset.g;renderSide()},
+  delArea:b=>{snap();state.floors.forEach(f=>f.areas=f.areas.filter(a=>a.id!==b.dataset.id));changed()},
+  delSel:()=>deleteSelected(),
+  rotSel:()=>rotateSelected(),
+  diffSide:b=>{const o=objById(selected.id);if(o.side===b.dataset.s)return;if(state.routes.some(r=>r.to===o.id)){toast(t('err_has_routes'),true);return}snap();o.side=b.dataset.s;o.itemId=null;changed()},
+  routeD:b=>{const r=state.routes.find(x=>x.id===selected.id);snap();r.d=+b.dataset.d;changed()},
+  zoomIn:()=>{const r=svg.getBoundingClientRect();zoomAt(1.25,r.width/2,r.height/2)},
+  zoomOut:()=>{const r=svg.getBoundingClientRect();zoomAt(.8,r.width/2,r.height/2)},
+  fit:()=>fitView(), undo:()=>undo(), pdf:()=>makePDF(),
+  lang:b=>{lang=b.dataset.lang;try{localStorage.setItem('recu_lang',lang)}catch(e){}if(document.body.classList.contains('admin'))renderAdmin();renderAll()}
+};
+document.addEventListener('click',e=>{const l=e.target.closest('#langSw button');if(l){ACT.lang(l);return}const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const fn=ACT[b.dataset.act]||ADM[b.dataset.act];if(fn){e.preventDefault();fn(b,e)}});
+document.addEventListener('input',e=>{const el=e.target;const k=el.dataset&&el.dataset.bind;if(!k||el.closest('#adminView'))return;
+  if(k==='height'){state.height=num(el.value);scheduleSave();refreshSum()}
+  else if(k==='areaManual'){state.areaManual=el.value;scheduleSave();refreshSum()}
+  else if(k.startsWith('client.')){state.client[k.slice(7)]=el.value;scheduleSave()}
+  else if(k==='extra'){state.extras[el.dataset.id]=Math.max(0,Math.round(num(el.value)));scheduleSave();renderEstimate()}});
+document.addEventListener('change',e=>{const el=e.target;const k=el.dataset&&el.dataset.bind;if(!k||el.closest('#adminView'))return;
+  if(k==='height'||k==='areaManual'){renderAll();return}
+  if(k==='rigidKind'){ui.rigidKind=el.value;renderSide();return}
+  if(k==='rigidD'){ui.rigidD=+el.value;return}
+  if(k==='diffModel'){snap();objById(selected.id).itemId=el.value||null;changed();return}
+  if(k==='riserLink'){snap();const o=objById(selected.id);o.link=el.value||null;const c=objById(o.link);o.side=c?c.side:null;state.routes.forEach(r=>{if(r.from===o.id){const d=objById(r.to);if(d&&c&&d.side!==c.side)r._bad=1}});state.routes=state.routes.filter(r=>!r._bad);changed();return}
+  if(k==='routeKind'){snap();state.routes.find(x=>x.id===selected.id).rkind=el.value;changed();return}
+  if(k==='routeRD'){snap();state.routes.find(x=>x.id===selected.id).d=+el.value;changed();return}
+});
+function refreshSum(){const b=$('#sumBox');if(b)b.innerHTML=summaryHTML(compute());renderPlan()}
+$('#fileIn').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)importPlanFile(f)});
+$('#projIn').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const j=JSON.parse(await f.text());if(!j.state||!j.state.floors)throw new Error('format');snap();state=Object.assign(newState(),j.state);images=j.images||{};ui.floorId=state.floors[0].id;selected=null;syncRigidD();changed();requestAnimationFrame(fitView)}catch(err){toast('JSON: '+err.message,true)}});
+
+// ---------------------------------------------------------------- ADMIN
+let adm={authed:false,pw:'',data:null,filter:'',dirty:false};
+function admTypeOpts(sel){return TYPES.map(ty=>`<option value="${ty}" ${ty===sel?'selected':''}>${esc(t('t_'+ty))}</option>`).join('')}
+function renderAdmin(){
+  const el=$('#adminView');
+  if(serverMode&&!adm.authed){el.innerHTML=`<div class="admWrap" style="max-width:380px;margin-top:8vh"><div class="card"><h2>${esc(t('adm_title'))}</h2>
+    <form id="admLogin"><label class="fld"><span>${esc(t('password'))}</span><input type="password" name="pw" autocomplete="current-password"></label><button class="btn pri wide">${esc(t('login'))}</button></form>
+    <p style="margin-top:14px"><a class="lnk" href="#">${esc(t('back'))}</a></p></div></div>`;
+    $('#admLogin').addEventListener('submit',async e=>{e.preventDefault();const pw=e.target.pw.value;try{const r=await fetch('api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});if(r.ok){adm.authed=true;adm.pw=pw;renderAdmin()}else toast(t('wrong_pw'),true)}catch(err){toast(String(err),true)}});
+    setTimeout(()=>{const i=el.querySelector('input');i&&i.focus()},30);return}
+  if(!adm.data){
+    if(serverMode){el.innerHTML=`<div class="admWrap"><p class="hint">${esc(t('loading'))}</p></div>`;
+      fetch('api/admin/data',{cache:'no-store',headers:{'Authorization':'Bearer '+adm.pw}}).then(async r=>{
+        if(r.status===401){adm.authed=false;adm.pw='';toast(t('wrong_pw'),true);renderAdmin();return}
+        if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();adm.data=normData(j||{settings:{},items:[]});renderAdmin()}).catch(err=>toast(String(err.message||err),true));
+      return}
+    adm.data=JSON.parse(JSON.stringify(DATA));
+  }
+  const d=adm.data,st=d.settings;
+  const sets=[['vat','s_vat'],['reserve','s_reserve'],['ach','s_ach'],['cap75','s_cap75'],['cap90','s_cap90'],['laborFlexPerM','s_lab_flex'],['laborRecup','s_lab_recup'],['laborOutside','s_lab_out'],['ringsPerPipe','s_rings']];
+  const list=d.items.map((it,i)=>({it,i})).filter(x=>!adm.filter||x.it.type===adm.filter);
+  el.innerHTML=`<div class="admWrap"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap"><h2 style="font-size:20px;margin:0">${esc(t('adm_title'))}</h2>
+    <a class="lnk" href="#">${esc(t('back'))}</a><span class="hspace"></span>${adm.dirty?`<span class="tag warn">${esc(t('unsaved'))}</span>`:''}<button class="btn pri" data-act="admSave">${esc(t('save_all'))}</button></div>
+    <p class="hint">${esc(serverMode?t('server_save'):t('demo_save'))}</p>
+    <div class="card"><h3 style="margin-top:0">${esc(t('settings'))}</h3><p class="hint">${esc(t('prices_note'))}</p><div class="setGrid">
+    ${sets.map(([k,l])=>`<label class="fld"><span>${esc(t(l))}</span><input type="text" inputmode="decimal" data-adm-set="${k}" value="${esc(st[k])}"></label>`).join('')}</div>
+    <h3>${esc(t('s_adj'))}</h3><p class="hint">${esc(t('s_adj_hint'))}</p><div class="setGrid">
+    ${TYPES.map(ty=>`<label class="fld"><span>${esc(t('t_'+ty))}</span><input type="text" inputmode="decimal" data-adm-set="adj_${ty}" value="${esc(st['adj_'+ty]??0)}"></label>`).join('')}</div></div>
+    <div class="card"><h3 style="margin-top:0">${esc(t('catalog'))} <span class="tag">${esc(t('items_n',{n:d.items.length}))}</span></h3><p class="hint">${esc(t('adm_help'))}</p>
+    <div class="admBar"><select id="admFilter" style="width:auto"><option value="">${esc(t('filter_all'))}</option>${admTypeOpts(adm.filter)}</select>
+     <button class="btn" data-act="admAdd">${esc(t('add_item'))}</button><button class="btn" data-act="admImport">⬆ ${esc(t('import'))}</button><button class="btn" data-act="admExport">⬇ ${esc(t('export'))}</button>
+     <span class="hspace"></span>${!serverMode&&DEMO_ITEMS.length?`<button class="btn sm danger" data-act="admResetDemo">${esc(t('reset_demo'))}</button>`:''}</div>
+    <div style="overflow:auto"><table class="cat"><thead><tr>${FIELDS.map(f=>`<th>${esc(t('f_'+f))}</th>`).join('')}<th></th></tr></thead><tbody>
+    ${list.map(({it,i})=>{const rel=TYPE_FIELDS[it.type]||[];const inp=(f,cls)=>{const off=['group','dims','diameter','inlet','airflow','outlets','length','kind'].includes(f)&&!rel.includes(f);
+      if(f==='type')return `<td class="w-type"><select data-i="${i}" data-f="type">${admTypeOpts(it.type)}</select></td>`;
+      if(f==='kind')return `<td class="w-kind"><select data-i="${i}" data-f="kind" ${off?'disabled':''}>${['any','supply','extract'].map(k=>`<option value="${k}" ${it.kind===k?'selected':''}>${esc(t('kind_'+k))}</option>`).join('')}</select></td>`;
+      return `<td class="${cls||''}"><input type="text" class="${off?'off':''}" data-i="${i}" data-f="${f}" value="${esc(it[f])}" ${f==='name'?'style="min-width:220px"':''}></td>`};
+      return `<tr>${FIELDS.map(f=>inp(f,NUMF.includes(f)?'w-num':'')).join('')}<td><button class="btn sm danger" data-act="admDel" data-i="${i}">✕</button></td></tr>`}).join('')}
+    </tbody></table></div></div></div>`;
+  $('#admFilter').addEventListener('change',e=>{adm.filter=e.target.value;renderAdmin()});
+}
+document.addEventListener('input',e=>{const el=e.target;if(!el.closest||!el.closest('#adminView'))return;
+  if(el.dataset.admSet){adm.data.settings[el.dataset.admSet]=el.value;markDirty()}
+  else if(el.dataset.f&&el.tagName==='INPUT'){const it=adm.data.items[+el.dataset.i];it[el.dataset.f]=el.value;markDirty()}});
+document.addEventListener('change',e=>{const el=e.target;if(!el.closest||!el.closest('#adminView'))return;
+  if(el.dataset.f&&el.tagName==='SELECT'){adm.data.items[+el.dataset.i][el.dataset.f]=el.value;markDirty();if(el.dataset.f==='type')renderAdmin()}});
+function markDirty(){if(!adm.dirty){adm.dirty=true;const b=document.querySelector('#adminView .hspace');b&&b.insertAdjacentHTML('afterend',`<span class="tag warn">${esc(t('unsaved'))}</span>`)}}
+const ADM={
+  admAdd:()=>{adm.data.items.unshift({id:uid(),type:adm.filter||'recuperator',sku:'',name:'',diameter:0,airflow:0,outlets:0,length:0,kind:'any',price:0});adm.dirty=true;renderAdmin()},
+  admDel:b=>{adm.data.items.splice(+b.dataset.i,1);adm.dirty=true;renderAdmin()},
+  admResetDemo:async()=>{if(!(await modal({title:t('reset_demo'),html:'',okText:t('yes')})))return;adm.data.items=DEMO_ITEMS.map(x=>({...x}));adm.data.settings={...DEFAULT_SETTINGS};adm.dirty=true;renderAdmin()},
+  admSave:async()=>{const nd=normData(adm.data);nd.demo=false;
+    try{ if(serverMode){const r=await fetch('api/admin/data',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+adm.pw},body:JSON.stringify(nd)});if(!r.ok)throw new Error(r.status===401?t('wrong_pw'):'HTTP '+r.status)}
+      else localStorage.setItem('recu_catalog',JSON.stringify(nd));
+      if(serverMode)await loadData();else DATA=nd;adm.data=JSON.parse(JSON.stringify(nd));adm.dirty=false;toast(t('saved'));renderAdmin();renderAll()}
+    catch(err){toast(t('save_err',{e:err.message||err}),true)}},
+  admImport:()=>$('#catIn').click(),
+  admExport:async()=>{try{await loadScript(LIB.xlsx);const rows=adm.data.items.map(it=>{const o={};FIELDS.forEach(f=>o[f]=NUMF.includes(f)?num(it[f]):it[f]);return o});
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows,{header:FIELDS}),'catalog');
+    const help=[{type:'type',meaning:'recuperator, collector, plenum, diffuser, flex_pipe, rigid_pipe, elbow, grille, cap, ring, silencer, accessory'},{type:'kind',meaning:'supply / extract / any (diffuser)'},{type:'diameter',meaning:'mm; collector 0 = 75+90'},{type:'length',meaning:'flex_pipe: coil m; rigid_pipe: piece m'},{type:'price',meaning:'EUR bez PVN / без PVN'}];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(help),'help');
+    const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});await saveBlob(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'katalogs.xlsx')}catch(err){toast(String(err.message||err),true)}}
+};
+const HDR={type:['type','тип','veids','tips'],sku:['sku','slug','артикул','artikuls','kods','code'],name:['name','model','название','наименование','nosaukums'],group:['group','subcategory','группа','grupa'],dims:['dims','dimensions_mm','размеры','izmēri','size'],
+  diameter:['diameter','duct_diameter_mm','диаметр','diametrs','ø','d'],inlet:['inlet','вход','ieeja'],airflow:['airflow','airflow_max_m3h','расход','plūsma','plusma'],outlets:['outlets','выходов','выходы','izejas','izeju sk.'],
+  length:['length','длина','garums'],kind:['kind','назначение','pielietojums'],price:['price','price_eur','цена','cena']};
+function typeFromAny(v){v=String(v||'').trim().toLowerCase();if(TYPES.includes(v))return v;for(const ty of TYPES)for(const L of ['ru','lv'])if(I18N[L]['t_'+ty].toLowerCase()===v)return ty;return null}
+function kindFromAny(v){v=String(v||'').trim().toLowerCase();if(['supply','приток','pieplūde'].includes(v))return'supply';if(['extract','вытяжка','nosūce'].includes(v))return'extract';return'any'}
+$('#catIn').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
+  try{await loadScript(LIB.xlsx);const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    const items=[];rows.forEach(r=>{const o={};Object.keys(r).forEach(h=>{const key=String(h).replace(/^\uFEFF/,'').trim().toLowerCase();for(const f in HDR)if(HDR[f].includes(key))o[f]=r[h]});
+      const ty=typeFromAny(o.type)||(o.type===undefined&&num(o.airflow)>0?'recuperator':null);if(!ty||(o.price!==undefined&&String(o.price).trim()===''&&ty==='recuperator'))return;
+      if(ty==='recuperator'&&o.name&&!/alpicair|komfovent/i.test(o.name)&&o.group!==undefined&&o.sku&&/^nest|^alpicair/i.test(o.sku))o.name='AlpicAir '+o.name;
+      items.push({id:uid(),type:ty,sku:String(o.sku??''),name:String(o.name??''),group:String(o.group??''),dims:String(o.dims??'').replace(/\s*[x×*]\s*/gi,'×'),inlet:num(o.inlet),diameter:num(o.diameter),airflow:num(o.airflow),outlets:Math.round(num(o.outlets)),length:num(o.length),kind:kindFromAny(o.kind),price:num(o.price)})});
+    if(!items.length){toast(t('imported',{n:0}),true);return}
+    const r=await modal({title:t('import'),html:`<p class="hint">${esc(t('import_mode',{n:items.length}))}</p>`,buttons:[{v:null,label:t('cancel')},{v:'append',label:t('import_append')},{v:'replace',label:t('import_replace'),pri:true}]});
+    if(!r)return;if(r==='replace')adm.data.items=items;else adm.data.items.push(...items);adm.dirty=true;renderAdmin();toast(t('imported',{n:items.length}))}
+  catch(err){toast(String(err.message||err),true)}});
+
+// ---------------------------------------------------------------- routing / init
+function route(){const a=location.hash==='#admin';document.body.classList.toggle('admin',a);if(!a){adm.authed=false;adm.pw='';adm.data=null}if(a){adm.data=null;adm.dirty=false;renderAdmin()}else{renderAll();requestAnimationFrame(fitView)}}
+(async function init(){
+  applyI18n();
+  await loadData();
+  await loadProject();
+  window.addEventListener('hashchange',route);
+  route();
+  window.__recu={get state(){return state},compute,setTool,fitView,ui,view,get DATA(){return DATA}};
+})();
+</script>
+</body>
+</html>
