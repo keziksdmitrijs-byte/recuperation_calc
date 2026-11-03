@@ -1,5 +1,5 @@
-# runtime data saved from the admin panel
-data/*.json
-data/*.tmp
 node_modules/
 .DS_Store
+# price-list data must never be committed
+*seed*.sql
+data/
