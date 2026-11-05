@@ -857,7 +857,7 @@ window.addEventListener('resize',()=>{if(curImg())renderPlan()});
 // ---------------------------------------------------------------- calculation
 function compute(){
   const st=S(),res=1+st.reserve/100,W=[],lines=[],labor=[];
-  const addLine=(type,item,qty,unit,note)=>{if(!(qty>0))return;const ex=lines.find(l=>l.item===item&&l.unit===unit&&item);if(ex){ex.qty+=qty;ex.sum=ex.qty*ex.price;return}const pr=priceOf(item);lines.push({type,item,name:itemLabel(item),qty,unit,price:pr,sum:qty*pr,note})};
+  const addLine=(type,item,qty,unit,note,m)=>{if(!(qty>0))return;const ex=lines.find(l=>l.item===item&&l.unit===unit&&item);if(ex){ex.qty+=qty;ex.sum=ex.qty*ex.price;if(m)ex.m=(ex.m||0)+m;return}const pr=priceOf(item);lines.push({type,item,name:itemLabel(item),qty,unit,price:pr,sum:qty*pr,note,m:m||0})};
   const missing=new Set();const miss=(type,d)=>missing.add(t('t_'+type)+(d?' Ø'+d:''));
   // area / volume
   let area=0;const noScale=new Set();
@@ -916,7 +916,7 @@ function compute(){
   if(freeDiff)W.push(t('w_diff_free',{n:freeDiff}));
   // flexible pipes (coils) + rings + caps
   [75,90].forEach(d=>{if(!flexLen[d])return;const it=pickD('flex_pipe',d);const total=flexLen[d]*res;
-    if(!it){miss('flex_pipe',d);return}const coil=it.length>0?it.length:50;addLine('flex_pipe',it,Math.ceil(total/coil),'u_coil',`${f1(total)} ${t('mm')}`)});
+    if(!it){miss('flex_pipe',d);return}const coil=it.length>0?it.length:50;addLine('flex_pipe',it,Math.ceil(total/coil),'u_coil',`${f1(total)} ${t('mm')}`,total)});
   [75,90].forEach(d=>{if(!flexCount[d])return;const it=pickD('ring',d);if(!it){miss('ring',d);return}addLine('ring',it,flexCount[d]*st.ringsPerPipe,'u_pcs')});
   Object.keys(capsBy).forEach(d=>{const it=pickD('cap',d);if(!it){miss('cap',d);return}addLine('cap',it,capsBy[d],'u_pcs')});
   // rigid
@@ -926,7 +926,7 @@ function compute(){
     const it=pickD('rigid_pipe',r.d);const pl=it&&it.length>0?it.length:1;b.pieces+=len>0?Math.ceil(len/pl):0;b.len+=len;b.elbows+=turns(pts);
     if(r.rkind!=='internal'){b.grilles++;outside++}});
   Object.keys(rigidBy).forEach(d=>{const b=rigidBy[d];
-    const p=pickD('rigid_pipe',d);if(p)addLine('rigid_pipe',p,b.pieces,'u_pcs',`${f1(b.len)} ${t('mm')}`);else miss('rigid_pipe',d);
+    const p=pickD('rigid_pipe',d);if(p)addLine('rigid_pipe',p,b.pieces,'u_pcs',`${f1(b.len)} ${t('mm')}`,b.len);else miss('rigid_pipe',d);
     if(b.elbows){const e=pickD('elbow',d);if(e)addLine('elbow',e,b.elbows,'u_pcs');else miss('elbow',d)}
     if(b.grilles){const g=pickD('grille',d);if(g)addLine('grille',g,b.grilles,'u_pcs');else miss('grille',d)}});
   if(recup&&!outside)W.push(t('w_no_outside'));
@@ -1078,8 +1078,14 @@ function renderProps(){
 // ---------------------------------------------------------------- estimate view
 function estimateRows(c){
   const rows=[];
-  if(c.lines.length){rows.push({grp:t('materials')});c.lines.forEach(l=>rows.push({name:t('t_'+l.type)+' — '+l.name+(l.note?` (${l.note})`:''),qty:l.qty,unit:t(l.unit),price:l.price,sum:l.sum}));rows.push({tot:t('mat_total'),sum:c.mat})}
-  if(c.labor.length){rows.push({grp:t('labor')});c.labor.forEach(l=>rows.push({name:l.name,qty:l.qty,unit:t(l.unit),price:l.price,sum:l.sum}));rows.push({tot:t('lab_total'),sum:c.lab})}
+  // Client report: recuperator as its own position (with model); other materials by name only, merged by type; installation as one sum.
+  const rec=c.lines.filter(l=>l.type==='recuperator'),mat=c.lines.filter(l=>l.type!=='recuperator');
+  if(rec.length){rows.push({grp:t('t_recuperator')});rec.forEach(l=>rows.push({name:l.item.name,qty:l.qty,unit:t(l.unit),price:l.price,sum:l.sum}))}
+  if(mat.length){rows.push({grp:t('materials')});const g=[];
+    mat.forEach(l=>{let x=g.find(y=>y.type===l.type&&y.unit===l.unit);if(!x){x={type:l.type,unit:l.unit,qty:0,sum:0,m:0};g.push(x)}x.qty+=l.qty;x.sum+=l.sum;x.m+=l.m||0});
+    g.forEach(x=>rows.push({name:t('t_'+x.type)+(x.m?` (${f1(x.m)} ${t('mm')})`:''),qty:x.qty,unit:t(x.unit),price:x.qty?x.sum/x.qty:0,sum:x.sum}));
+    if(rec.length)rows.push({tot:t('mat_total'),sum:mat.reduce((a,l)=>a+l.sum,0)})}
+  if(c.lab>0){rows.push({grp:t('labor')});rows.push({name:t('labor'),qty:1,unit:t('u_set'),price:c.lab,sum:c.lab})}
   rows.push({tot:t('subtotal'),sum:c.net,strong:true});rows.push({tot:t('vat',{v:f1(S().vat)}),sum:c.vat});rows.push({grand:t('total'),sum:c.gross});
   return rows;
 }
