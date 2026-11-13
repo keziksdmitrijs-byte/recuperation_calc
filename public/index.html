@@ -133,6 +133,14 @@ table.est tr.grand td{font-weight:700;font-size:15px;border-top:2px solid var(--
 .modal{background:#fff;border-radius:14px;padding:18px 20px;width:min(420px,100%);box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .modal h3{margin:0 0 10px;font-size:16px;text-transform:none;letter-spacing:0;color:var(--ink)}
 .modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.modal.ed{width:auto;max-width:100%;max-height:100%;overflow:auto}
+.edBar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.edBar .btn{min-width:38px;font-size:16px;padding:5px 10px}
+.edBar label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);flex:1;min-width:220px}
+.edBar input[type=range]{flex:1;min-width:90px}
+.edBar output{min-width:46px;text-align:right;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.edStage{display:grid;place-items:center;background:#e2e8f0;border-radius:10px;padding:10px}
+.edStage canvas{display:block;touch-action:none;background:#fff}
 #busy{position:fixed;inset:0;background:rgba(255,255,255,.7);display:none;place-items:center;z-index:95;font-weight:600}
 #busy.show{display:grid}
 /* admin */
@@ -225,8 +233,11 @@ ru:{
  floor_name:'Название этажа', replace_q:'Заменить план? Нарисованные объекты останутся, но масштаб нужно будет задать заново.',
  scale_t:'Масштаб', scale_hint:'Нажмите «Указать стену», отметьте на плане два конца любой стены и введите её длину.',
  scale_btn:'Указать стену', scale_ok:'Задан: стена {m} м', scale_none:'Масштаб не задан', wall_len:'Длина стены, м',
- area_t:'Площадь', area_hint:'Обведите контур дома (или отдельных помещений) по углам. Чтобы замкнуть контур — нажмите на первую точку или Enter.',
- area_btn:'Обвести контур', contour:'Контур {n}', area_floor:'Площадь этажа', area_total:'Площадь по контурам', area_manual:'Или введите площадь вручную, м²',
+ area_t:'Площадь', area_hint:'Обведите вентилируемый контур — по нему считается площадь. Если часть дома не вентилируется (например, гараж), обведите ещё и контур дома: трубы забора и выброса выводятся через его наружные стены. Если контур дома не обведён, им считается вентилируемый контур.',
+ house_btn:'Контур дома', house_contour:'Контур дома {n}', house_total:'Площадь дома', house_lbl:'Дом', contour_type:'Тип контура', kind_vent:'Вентилируемый', kind_house:'Дом',
+ h_house:'Обведите наружные стены всего дома вместе с невентилируемыми помещениями (гараж и т. п.). Нажмите на первую точку или Enter, чтобы замкнуть. Backspace — убрать точку.',
+ edit_plan:'Повернуть / обрезать план', ed_title:'Подготовка плана', ed_hint:'Поверните план, чтобы стены шли ровно, и перетащите рамку за края или углы, чтобы обрезать лишнее.', ed_angle:'Точный поворот', ed_reset:'Сбросить', ed_apply:'Применить', ed_rot_l:'Повернуть влево на 90°', ed_rot_r:'Повернуть вправо на 90°',
+ area_btn:'Вентилируемый контур', contour:'Вентилируемый контур {n}', area_floor:'Площадь этажа', area_total:'Вентилируемая площадь', area_manual:'Или введите площадь вручную, м²',
  height:'Высота потолков, м', volume:'Объём', req_air:'Нужный воздухообмен', ach_note:'{ach} раз/ч',
  recup_hint:'Модели, у которых максимальный расход меньше нужного, показаны тёмными — выбрать их можно, но производительности не хватит.',
  place_recup:'Поставить рекуператор на план', recup_placed:'Рекуператор стоит на плане', airflow:'Расход', too_small:'мало',
@@ -297,8 +308,11 @@ lv:{
  floor_name:'Stāva nosaukums', replace_q:'Aizstāt plānu? Uzzīmētie objekti paliks, bet mērogs būs jāiestata no jauna.',
  scale_t:'Mērogs', scale_hint:'Nospiediet «Norādīt sienu», atzīmējiet plānā jebkuras sienas abus galus un ievadiet tās garumu.',
  scale_btn:'Norādīt sienu', scale_ok:'Iestatīts: siena {m} m', scale_none:'Mērogs nav iestatīts', wall_len:'Sienas garums, m',
- area_t:'Platība', area_hint:'Apvelciet mājas (vai atsevišķu telpu) kontūru pa stūriem. Lai noslēgtu kontūru, uzklikšķiniet uz pirmā punkta vai nospiediet Enter.',
- area_btn:'Apvilkt kontūru', contour:'Kontūra {n}', area_floor:'Stāva platība', area_total:'Platība pēc kontūrām', area_manual:'Vai ievadiet platību manuāli, m²',
+ area_t:'Platība', area_hint:'Apvelciet vēdināmo kontūru — pēc tās tiek aprēķināta platība. Ja daļa mājas netiek vēdināta (piemēram, garāža), apvelciet arī mājas kontūru: gaisa ņemšanas un izmešanas caurules tiek izvadītas caur tās ārsienām. Ja mājas kontūra nav apvilkta, par to tiek uzskatīta vēdināmā kontūra.',
+ house_btn:'Mājas kontūra', house_contour:'Mājas kontūra {n}', house_total:'Mājas platība', house_lbl:'Māja', contour_type:'Kontūras veids', kind_vent:'Vēdināmā', kind_house:'Māja',
+ h_house:'Apvelciet visas mājas ārsienas kopā ar nevēdināmajām telpām (garāža u. tml.). Uzklikšķiniet uz pirmā punkta vai nospiediet Enter, lai noslēgtu. Backspace — noņemt punktu.',
+ edit_plan:'Pagriezt / apgriezt plānu', ed_title:'Plāna sagatavošana', ed_hint:'Pagrieziet plānu, lai sienas būtu taisnas, un velciet rāmi aiz malām vai stūriem, lai apgrieztu lieko.', ed_angle:'Precīza pagriešana', ed_reset:'Atiestatīt', ed_apply:'Lietot', ed_rot_l:'Pagriezt pa kreisi par 90°', ed_rot_r:'Pagriezt pa labi par 90°',
+ area_btn:'Vēdināmā kontūra', contour:'Vēdināmā kontūra {n}', area_floor:'Stāva platība', area_total:'Vēdināmā platība', area_manual:'Vai ievadiet platību manuāli, m²',
  height:'Griestu augstums, m', volume:'Tilpums', req_air:'Nepieciešamā gaisa apmaiņa', ach_note:'{ach} reizes/h',
  recup_hint:'Modeļi, kuru maksimālā plūsma ir mazāka par nepieciešamo, ir tumšāki — tos var izvēlēties, taču jaudas nepietiks.',
  place_recup:'Novietot rekuperatoru plānā', recup_placed:'Rekuperators novietots plānā', airflow:'Plūsma', too_small:'par maz',
@@ -376,8 +390,11 @@ I18N.en={
  floor_name:'Floor name', replace_q:'Replace the plan? Drawn objects stay, but the scale has to be set again.',
  scale_t:'Scale', scale_hint:'Press “Mark a wall”, click both ends of any wall on the plan and enter its length.',
  scale_btn:'Mark a wall', scale_ok:'Set: wall {m} m', scale_none:'Scale not set', wall_len:'Wall length, m',
- area_t:'Area', area_hint:'Trace the outline of the house (or of separate rooms) corner by corner. To close the outline, click the first point or press Enter.',
- area_btn:'Trace outline', contour:'Outline {n}', area_floor:'Floor area', area_total:'Area from outlines', area_manual:'Or enter the area manually, m²',
+ area_t:'Area', area_hint:'Trace the ventilated outline — the area is calculated from it. If part of the house is not ventilated (a garage, for example), also trace the house outline: intake and exhaust ducts are led out through its outer walls. If no house outline is drawn, the ventilated outline is used as the house outline.',
+ house_btn:'House outline', house_contour:'House outline {n}', house_total:'House area', house_lbl:'House', contour_type:'Outline type', kind_vent:'Ventilated', kind_house:'House',
+ h_house:'Trace the outer walls of the whole house, including unventilated rooms (garage etc.). Click the first point or press Enter to close. Backspace — remove point.',
+ edit_plan:'Rotate / crop plan', ed_title:'Prepare the plan', ed_hint:'Rotate the plan so the walls run straight, and drag the frame by its edges or corners to crop what is not needed.', ed_angle:'Fine rotation', ed_reset:'Reset', ed_apply:'Apply', ed_rot_l:'Rotate left 90°', ed_rot_r:'Rotate right 90°',
+ area_btn:'Ventilated outline', contour:'Ventilated outline {n}', area_floor:'Floor area', area_total:'Ventilated area', area_manual:'Or enter the area manually, m²',
  height:'Ceiling height, m', volume:'Volume', req_air:'Required air exchange', ach_note:'{ach} ×/h',
  recup_hint:'Units whose maximum airflow is below the required airflow are shown dark — you can still choose them, but the capacity will not be enough.',
  place_recup:'Place the unit on the plan', recup_placed:'Unit is on the plan — click to move', airflow:'Airflow', too_small:'too small',
@@ -592,6 +609,11 @@ const curImg=()=>{const f=curFloor();return f&&f.imageId?images[f.imageId]:null}
 const objById=id=>state.objects.find(o=>o.id===id);
 const pxPerM=f=>f&&f.scale&&f.scale.meters>0?dist(f.scale.p1,f.scale.p2)/f.scale.meters:0;
 const recupObj=()=>state.objects.find(o=>o.kind==='recup');
+// contours: ventilated (default) are counted as area; 'house' ones only give the outer walls.
+// Without a house contour the ventilated contours are the house.
+const isHouse=a=>a.kind==='house';
+const HOUSE_COL='#475569';
+const wallAreas=f=>{const h=f.areas.filter(isHouse);return h.length?h:f.areas};
 function rootCollector(id){const o=objById(id);if(!o)return null;if(o.kind==='collector')return o;if(o.kind==='riser'){const c=objById(o.link);return c&&c.kind==='collector'?c:null}return null}
 function routePts(r){const pts=r.pts.map(p=>p.slice());const a=objById(r.from);if(a&&a.floor===r.floor)pts[0]=[a.x,a.y];const b=r.to&&objById(r.to);if(b&&b.floor===r.floor)pts[pts.length-1]=[b.x,b.y];return pts}
 function routeSide(r){if(r.kind!=='flex')return null;const c=rootCollector(r.from);return c?c.side:null}
@@ -619,6 +641,9 @@ async function importPlanFile(file){
     const img=await loadImg(src);
     let w=img.naturalWidth,h=img.naturalHeight;const MAX=3600;
     if(Math.max(w,h)>MAX){const k=MAX/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);src=c.toDataURL('image/jpeg',.9)}
+    busy(false);
+    const ed=await planEditor({src,w,h}); if(!ed) return;
+    if(!ed.same){src=ed.src;w=ed.w;h=ed.h}
     snap();
     const id=uid(); images[id]={src,w,h};
     if(f.imageId){f.scale=null}
@@ -642,6 +667,88 @@ async function pdfToImage(file){
   return c.toDataURL('image/jpeg',.9);
 }
 
+// ---------------------------------------------------------------- plan editor (rotate / crop)
+// Resolves null (cancelled), {same:true} (nothing changed) or {src,w,h,map,odd}:
+// map() converts a point of the old image into the new one, odd = turned by 90°/270°.
+async function planEditor(im){
+  const img=await loadImg(im.src);const w=im.w,h=im.h;
+  const pk=Math.min(1,1600/Math.max(w,h));const pv=document.createElement('canvas');pv.width=Math.max(1,Math.round(w*pk));pv.height=Math.max(1,Math.round(h*pk));
+  {const x=pv.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,pv.width,pv.height);x.drawImage(img,0,0,pv.width,pv.height)}
+  return new Promise(res=>{
+    const bg=document.createElement('div');bg.className='modalBg';
+    bg.innerHTML=`<div class="modal ed" tabindex="-1"><h3>${esc(t('ed_title'))}</h3>
+      <div class="edBar"><button type="button" class="btn" data-e="l" title="${esc(t('ed_rot_l'))}">⟲</button><button type="button" class="btn" data-e="r" title="${esc(t('ed_rot_r'))}">⟳</button>
+        <label><span>${esc(t('ed_angle'))}</span><input type="range" min="-45" max="45" step="0.1" value="0"><output>0°</output></label>
+        <button type="button" class="btn" data-e="reset" style="font-size:13px">${esc(t('ed_reset'))}</button></div>
+      <div class="edStage"><canvas></canvas></div><p class="hint" style="margin:8px 0 0">${esc(t('ed_hint'))}</p>
+      <div class="acts"><button type="button" class="btn" data-e="cancel">${esc(t('cancel'))}</button><button type="button" class="btn pri" data-e="apply">${esc(t('ed_apply'))}</button></div></div>`;
+    document.body.appendChild(bg);
+    const cv=bg.querySelector('canvas'),rng=bg.querySelector('input[type=range]'),out=bg.querySelector('output');
+    let q=0,fine=0,crop=[0,0,1,1],rot=null,B=[w,h],dpr=1,dragE=null;
+    const ang=()=>(q*90+fine)*Math.PI/180;
+    const bbox=()=>{const a=ang(),c=Math.abs(Math.cos(a)),sn=Math.abs(Math.sin(a));return[w*c+h*sn,w*sn+h*c]};
+    function layout(){
+      B=bbox();const mw=Math.max(160,Math.min(window.innerWidth-96,980)),mh=Math.max(160,window.innerHeight-300);const ds=Math.min(mw/B[0],mh/B[1]);
+      dpr=Math.min(2,window.devicePixelRatio||1);const cw=Math.max(1,Math.round(B[0]*ds)),ch=Math.max(1,Math.round(B[1]*ds));
+      cv.style.width=cw+'px';cv.style.height=ch+'px';cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);
+      rot=document.createElement('canvas');rot.width=cv.width;rot.height=cv.height;const x=rot.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,rot.width,rot.height);
+      x.translate(rot.width/2,rot.height/2);x.rotate(ang());const sc=ds*dpr/pk;x.scale(sc,sc);x.drawImage(pv,-pv.width/2,-pv.height/2);
+      out.textContent=(fine>0?'+':'')+fine.toFixed(1)+'°';draw();
+    }
+    function draw(){
+      const x=cv.getContext('2d'),W=cv.width,H=cv.height;x.setTransform(1,0,0,1,0,0);x.drawImage(rot,0,0);
+      const cx=crop[0]*W,cy=crop[1]*H,cw=crop[2]*W,ch=crop[3]*H;
+      x.fillStyle='rgba(15,23,42,.55)';x.fillRect(0,0,W,cy);x.fillRect(0,cy+ch,W,H-cy-ch);x.fillRect(0,cy,cx,ch);x.fillRect(cx+cw,cy,W-cx-cw,ch);
+      x.strokeStyle='rgba(15,118,110,.4)';x.lineWidth=dpr;x.beginPath();for(let i=1;i<3;i++){x.moveTo(cx+cw*i/3,cy);x.lineTo(cx+cw*i/3,cy+ch);x.moveTo(cx,cy+ch*i/3);x.lineTo(cx+cw,cy+ch*i/3)}x.stroke();
+      x.strokeStyle='#0f766e';x.lineWidth=2*dpr;x.strokeRect(cx,cy,cw,ch);
+      const hs=6*dpr;x.fillStyle='#fff';[[0,0],[.5,0],[1,0],[0,.5],[1,.5],[0,1],[.5,1],[1,1]].forEach(([u,v])=>{const px=Math.min(W-hs,Math.max(hs,cx+cw*u)),py=Math.min(H-hs,Math.max(hs,cy+ch*v));x.fillRect(px-hs,py-hs,2*hs,2*hs);x.strokeRect(px-hs,py-hs,2*hs,2*hs)});
+    }
+    const pos=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height,tx:(e.pointerType==='touch'?22:12)/r.width,ty:(e.pointerType==='touch'?22:12)/r.height}};
+    function hit(p){const [x0,y0,cw,ch]=crop,x1=x0+cw,y1=y0+ch;const inX=p.x>x0-p.tx&&p.x<x1+p.tx,inY=p.y>y0-p.ty&&p.y<y1+p.ty;
+      const m={l:inY&&Math.abs(p.x-x0)<p.tx,r:inY&&Math.abs(p.x-x1)<p.tx,t:inX&&Math.abs(p.y-y0)<p.ty,b:inX&&Math.abs(p.y-y1)<p.ty};
+      if(m.l&&m.r)m[Math.abs(p.x-x0)<Math.abs(p.x-x1)?'r':'l']=false;if(m.t&&m.b)m[Math.abs(p.y-y0)<Math.abs(p.y-y1)?'b':'t']=false;
+      if(m.l||m.r||m.t||m.b)return m;return p.x>x0&&p.x<x1&&p.y>y0&&p.y<y1?{move:true}:null}
+    const cursor=m=>!m?'default':m.move?'move':(m.l&&m.t)||(m.r&&m.b)?'nwse-resize':(m.r&&m.t)||(m.l&&m.b)?'nesw-resize':m.l||m.r?'ew-resize':'ns-resize';
+    cv.addEventListener('pointerdown',e=>{const p=pos(e),m=hit(p);if(!m)return;e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(_){}dragE={m,p,c:crop.slice()}});
+    cv.addEventListener('pointermove',e=>{const p=pos(e);if(!dragE){cv.style.cursor=cursor(hit(p));return}
+      const {m,c}=dragE,dx=p.x-dragE.p.x,dy=p.y-dragE.p.y,MIN=.04;let x0=c[0],y0=c[1],x1=c[0]+c[2],y1=c[1]+c[3];
+      if(m.move){const nx=Math.min(1-c[2],Math.max(0,c[0]+dx)),ny=Math.min(1-c[3],Math.max(0,c[1]+dy));crop=[nx,ny,c[2],c[3]]}
+      else{if(m.l)x0=Math.min(x1-MIN,Math.max(0,x0+dx));if(m.r)x1=Math.max(x0+MIN,Math.min(1,x1+dx));if(m.t)y0=Math.min(y1-MIN,Math.max(0,y0+dy));if(m.b)y1=Math.max(y0+MIN,Math.min(1,y1+dy));crop=[x0,y0,x1-x0,y1-y0]}
+      draw()});
+    const up=()=>{dragE=null};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+    rng.addEventListener('input',()=>{fine=num(rng.value);layout()});
+    const close=v=>{window.removeEventListener('resize',layout);bg.remove();res(v)};
+    function apply(){
+      const full=crop[0]<.002&&crop[1]<.002&&crop[2]>.996&&crop[3]>.996;if(!q&&!fine&&full){close({same:true});return}
+      const a=ang(),cs=Math.cos(a),sn=Math.sin(a);B=bbox();const cx=crop[0]*B[0],cy=crop[1]*B[1],cw=Math.max(1,crop[2]*B[0]),ch=Math.max(1,crop[3]*B[1]);
+      const k=Math.min(1,3600/Math.max(cw,ch));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(cw*k));c.height=Math.max(1,Math.round(ch*k));
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.scale(k,k);x.translate(B[0]/2-cx,B[1]/2-cy);x.rotate(a);x.drawImage(img,-w/2,-h/2,w,h);
+      const bw=B[0],bh=B[1];
+      close({src:c.toDataURL('image/jpeg',.92),w:c.width,h:c.height,odd:Math.abs(Math.round((q*90+fine)/90))%2===1,
+        map:p=>{const dx=p[0]-w/2,dy=p[1]-h/2;return[(dx*cs-dy*sn+bw/2-cx)*k,(dx*sn+dy*cs+bh/2-cy)*k]}});
+    }
+    bg.addEventListener('click',e=>{const b=e.target.closest('[data-e]');if(!b)return;const a=b.dataset.e;
+      if(a==='l'){q=(q+3)%4;crop=[crop[1],1-crop[0]-crop[2],crop[3],crop[2]];layout()}
+      else if(a==='r'){q=(q+1)%4;crop=[1-crop[1]-crop[3],crop[0],crop[3],crop[2]];layout()}
+      else if(a==='reset'){q=0;fine=0;rng.value=0;crop=[0,0,1,1];layout()}
+      else if(a==='cancel')close(null);else if(a==='apply')apply()});
+    bg.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();close(null)}else if(e.key==='Enter'&&e.target!==rng&&!e.target.closest('button')){e.preventDefault();apply()}});
+    window.addEventListener('resize',layout);
+    layout();setTimeout(()=>bg.querySelector('.modal').focus(),30);
+  });
+}
+async function editFloorPlan(f){
+  const im=f&&images[f.imageId];if(!im)return;
+  if(ui.floorId!==f.id){ui.floorId=f.id;selected=null;draft=null;renderAll();fitView()}
+  const ed=await planEditor(im);if(!ed||ed.same)return;
+  snap();const id=uid();images[id]={src:ed.src,w:ed.w,h:ed.h};f.imageId=id;const m=ed.map;
+  if(f.scale){f.scale.p1=m(f.scale.p1);f.scale.p2=m(f.scale.p2)}
+  f.areas.forEach(a=>{a.pts=a.pts.map(m)});
+  state.objects.forEach(o=>{if(o.floor!==f.id)return;[o.x,o.y]=m([o.x,o.y]);if(ed.odd&&(o.kind==='recup'||o.kind==='collector'))o.rot=((o.rot||0)+90)%180});
+  state.routes.forEach(r=>{if(r.floor===f.id)r.pts=r.pts.map(m)});
+  selected=null;draft=null;changed();fitView();
+}
+
 // ---------------------------------------------------------------- editor
 const svg=$('#plan'), vpG=$('#vp'), overlay=$('#overlay'), draftG=$('#draftG'), planImg=$('#planImg');
 const view={s:1,tx:0,ty:0};
@@ -660,9 +767,9 @@ function pushPt(p){const l=draft.pts[draft.pts.length-1];if(l&&dist(l,p)<4/view.
 function turns(pts){let n=0;for(let i=1;i<pts.length-1;i++){const a=[pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]],b=[pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]];
   const la=Math.hypot(...a),lb=Math.hypot(...b);if(la<1e-6||lb<1e-6)continue;const c=(a[0]*b[0]+a[1]*b[1])/(la*lb);if(c<Math.cos(10*Math.PI/180))n++}return n}
 function inPoly(p,pts){let r=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const a=pts[i],b=pts[j];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])r=!r}return r}
-function nearestWall(p,f){let best=null;(f||curFloor()).areas.forEach(a=>{for(let i=0;i<a.pts.length;i++){const A=a.pts[i],B=a.pts[(i+1)%a.pts.length];const ex=B[0]-A[0],ey=B[1]-A[1],L2=ex*ex+ey*ey;if(!L2)continue;
+function nearestWall(p,f){let best=null;wallAreas(f||curFloor()).forEach(a=>{for(let i=0;i<a.pts.length;i++){const A=a.pts[i],B=a.pts[(i+1)%a.pts.length];const ex=B[0]-A[0],ey=B[1]-A[1],L2=ex*ex+ey*ey;if(!L2)continue;
   let u=((p[0]-A[0])*ex+(p[1]-A[1])*ey)/L2;u=Math.max(0,Math.min(1,u));const W=[A[0]+u*ex,A[1]+u*ey];const d=dist(p,W);if(!best||d<best.d){const L=Math.sqrt(L2);best={pt:W,d,n:[-ey/L,ex/L]}}}});return best}
-function wallHit(p){const f=curFloor();if(!f.areas.length)return null;const w=nearestWall(p,f);if(!w)return null;const inside=f.areas.some(a=>inPoly(p,a.pts));return(!inside||w.d<14/view.s)?w:null}
+function wallHit(p){const f=curFloor();if(!f.areas.length)return null;const w=nearestWall(p,f);if(!w)return null;const inside=wallAreas(f).some(a=>inPoly(p,a.pts));return(!inside||w.d<14/view.s)?w:null}
 function orthoTail(pts,p){const L=pts[pts.length-1];const ppm=pxPerM(curFloor());const tol=ppm?.12*ppm:8/view.s;const dx=p[0]-L[0],dy=p[1]-L[1];
   if(Math.abs(dx)<tol)return[[L[0],p[1]]];if(Math.abs(dy)<tol)return[[p[0],L[1]]];
   let horizFirst=Math.abs(dx)>=Math.abs(dy);if(pts.length>=2){const P=pts[pts.length-2];horizFirst=Math.abs(L[0]-P[0])>=Math.abs(L[1]-P[1])}
@@ -675,9 +782,11 @@ function overlayMarkup(f,k,opt={}){
   const ppm=pxPerM(f); const interactive=!opt.print; let h=''; const placed=[];
   const isSel=(kind,id)=>interactive&&selected&&selected.kind===kind&&selected.id===id;
   // areas
-  f.areas.forEach(a=>{const sel=isSel('area',a.id);
-    h+=`<polygon ${interactive?`data-id="${a.id}" data-k="area"`:''} points="${a.pts.map(p=>p.join(',')).join(' ')}" fill="rgba(16,185,129,.12)" stroke="${sel?'#f59e0b':'#10b981'}" stroke-width="${(sel?3:2)*k}" stroke-dasharray="${8*k} ${4*k}" ${interactive&&tool!=='select'?'pointer-events="none"':''}/>`;
-    if(ppm)h+=lbl(centroid(a.pts),f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'),k,'#047857',15)});
+  [...f.areas].sort((a,b)=>isHouse(b)-isHouse(a)).forEach(a=>{const sel=isSel('area',a.id);const hs=isHouse(a);const col=hs?HOUSE_COL:'#10b981';
+    h+=`<polygon ${interactive?`data-id="${a.id}" data-k="area"`:''} points="${a.pts.map(p=>p.join(',')).join(' ')}" fill="${hs?'rgba(71,85,105,.07)':'rgba(16,185,129,.12)'}" stroke="${sel?'#f59e0b':col}" stroke-width="${(sel?3:hs?2.5:2)*k}" stroke-dasharray="${hs?`${14*k} ${4*k} ${3*k} ${4*k}`:`${8*k} ${4*k}`}" ${interactive&&tool!=='select'?'pointer-events="none"':''}/>`;
+    if(hs){let ti=0,ty=1e18;a.pts.forEach((p,i)=>{const q=a.pts[(i+1)%a.pts.length];const my=(p[1]+q[1])/2;if(dist(p,q)>60*k&&my<ty){ty=my;ti=i}});const p=a.pts[ti],q=a.pts[(ti+1)%a.pts.length];
+      h+=lbl([(p[0]+q[0])/2,(p[1]+q[1])/2+13*k],t('house_lbl')+(ppm?' · '+f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'):''),k,HOUSE_COL,12)}
+    else if(ppm)h+=lbl(centroid(a.pts),f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'),k,'#047857',15)});
   // scale
   if(f.scale){const {p1,p2}=f.scale;h+=`<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="#f59e0b" stroke-width="${3*k}"/>`+[p1,p2].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="${4*k}" fill="#f59e0b"/>`).join('')+lbl([(p1[0]+p2[0])/2,(p1[1]+p2[1])/2-12*k],f1(f.scale.meters)+' '+t('mm'),k,'#b45309',13)}
   // routes
@@ -730,8 +839,8 @@ function renderDraft(){
   let col='#f59e0b';
   if(draft.type==='flex'){const c=rootCollector(draft.from);col=c?SIDE_COL[c.side]:'#64748b'}
   if(draft.type==='rigid')col=RIGID_COL[ui.rigidKind];
-  if(draft.type==='area')col='#10b981';
-  let h=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="${draft.type==='area'?'rgba(16,185,129,.1)':'none'}" stroke="${col}" stroke-width="${(draft.type==='rigid'?6:3)*k}" stroke-dasharray="${8*k} ${5*k}" stroke-linejoin="round"/>`;
+  if(draft.type==='area')col=draft.kind==='house'?HOUSE_COL:'#10b981';
+  let h=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="${draft.type==='area'?(draft.kind==='house'?'rgba(71,85,105,.08)':'rgba(16,185,129,.1)'):'none'}" stroke="${col}" stroke-width="${(draft.type==='rigid'?6:3)*k}" stroke-dasharray="${8*k} ${5*k}" stroke-linejoin="round"/>`;
   if(draft.type==='rigid'&&ui.rigidKind!=='internal'){const w=wallHit(mouse);if(w)h+=`<circle cx="${w.pt[0]}" cy="${w.pt[1]}" r="${9*k}" fill="none" stroke="${col}" stroke-width="${2.5*k}"/>`+lbl([w.pt[0],w.pt[1]-18*k],'UVLA',k,col,11)}
   draft.pts.forEach((p,i)=>h+=`<circle cx="${p[0]}" cy="${p[1]}" r="${(draft.type==='area'&&i===0?7:4)*k}" fill="${col}" stroke="#fff" stroke-width="${1.5*k}"/>`);
   const f=curFloor(),ppm=pxPerM(f);
@@ -739,7 +848,7 @@ function renderDraft(){
   draftG.innerHTML=h;
 }
 function renderHint(){
-  const m={select:'h_select',recup:'h_recup',flex:'h_flex',rigid:'h_rigid',scale:'h_scale',area:'h_area'};
+  const m={select:'h_select',recup:'h_recup',flex:'h_flex',rigid:'h_rigid',scale:'h_scale',area:'h_area',house:'h_house'};
   let k=m[tool]||'h_place';if(!curImg()||ui.step===5||(tool==='select'&&ui.step<4)){$('#hint').textContent='';return}
   $('#hint').textContent=t(k);
 }
@@ -772,7 +881,7 @@ svg.addEventListener('pointerdown',e=>{
   }
   const pc=constrain(p);
   if(tool==='scale'){draft=draft||{type:'scale',pts:[]};pushPt(pc);if(draft.pts.length===2)askScale();renderDraft();return}
-  if(tool==='area'){if(!draft){draft={type:'area',pts:[pc]};renderDraft();return}
+  if(tool==='area'||tool==='house'){if(!draft){draft={type:'area',kind:tool==='house'?'house':'vent',pts:[pc]};renderDraft();return}
     if(draft.pts.length>=3&&dist(p,draft.pts[0])<10/view.s){closeArea();return}
     pushPt(pc);renderDraft();return}
   if(['recup','col_supply','col_extract','diff_supply','diff_extract','riser'].includes(tool)){
@@ -810,7 +919,7 @@ svg.addEventListener('pointermove',e=>{
 function endDrag(e){pointers.delete(e.pointerId);if(drag&&drag.type==='vertex'){const r=state.routes.find(x=>x.id===drag.rid);if(r&&r.kind==='rigid'&&!r.to&&r.rkind!=='internal'&&drag.i===r.pts.length-1){const w=nearestWall(r.pts[drag.i],state.floors.find(f=>f.id===r.floor));if(w)r.pts[drag.i]=w.pt}}
   if(drag){if(drag.type==='obj'&&drag.moved||drag.type==='vertex')changed(true);drag=null;svg.classList.remove('panning')}}
 svg.addEventListener('pointerup',endDrag);svg.addEventListener('pointercancel',endDrag);
-function closeArea(){if(!draft||draft.pts.length<3){toast(t('err_short'),true);return}snap();curFloor().areas.push({id:uid(),pts:draft.pts});draft=null;changed()}
+function closeArea(){if(!draft||draft.pts.length<3){toast(t('err_short'),true);return}snap();const a={id:uid(),pts:draft.pts};if(draft.kind==='house')a.kind='house';curFloor().areas.push(a);draft=null;changed()}
 function finishRigid(col,atWall){
   if(!draft)return;
   if(ui.rigidKind==='internal'&&!col){toast(t('err_end_col'),true);return}
@@ -860,8 +969,8 @@ function compute(){
   const addLine=(type,item,qty,unit,note,m)=>{if(!(qty>0))return;const ex=lines.find(l=>l.item===item&&l.unit===unit&&item);if(ex){ex.qty+=qty;ex.sum=ex.qty*ex.price;if(m)ex.m=(ex.m||0)+m;return}const pr=priceOf(item);lines.push({type,item,name:itemLabel(item),qty,unit,price:pr,sum:qty*pr,note,m:m||0})};
   const missing=new Set();const miss=(type,d)=>missing.add(t('t_'+type)+(d?' Ø'+d:''));
   // area / volume
-  let area=0;const noScale=new Set();
-  state.floors.forEach(f=>{const ppm=pxPerM(f);f.areas.forEach(a=>{if(!ppm){noScale.add(f.id);return}area+=polyArea(a.pts)/ppm/ppm})});
+  let area=0,houseArea=0;const noScale=new Set();
+  state.floors.forEach(f=>{const ppm=pxPerM(f);f.areas.forEach(a=>{if(!ppm){noScale.add(f.id);return}const m2=polyArea(a.pts)/ppm/ppm;if(isHouse(a))houseArea+=m2;else area+=m2})});
   const areaAuto=area;if(num(state.areaManual)>0)area=num(state.areaManual);
   const height=num(state.height);const volume=area*height;const reqAir=volume*st.ach;
   const recup=itemById(state.recupId);
@@ -941,7 +1050,7 @@ function compute(){
   if(outside)labor.push({name:t('lab_out'),qty:outside,unit:'u_pcs',price:st.laborOutside,sum:outside*st.laborOutside});
   const order=TYPES;lines.sort((a,b)=>order.indexOf(a.type)-order.indexOf(b.type));
   const mat=lines.reduce((s,l)=>s+l.sum,0),lab=labor.reduce((s,l)=>s+l.sum,0),net=mat+lab,vat=net*st.vat/100;
-  return{area,areaAuto,height,volume,reqAir,recup,sides,min75,min90,need,lines,labor,mat,lab,net,vat,gross:net+vat,warnings:W,flexLen,flexM};
+  return{area,areaAuto,houseArea,height,volume,reqAir,recup,sides,min75,min90,need,lines,labor,mat,lab,net,vat,gross:net+vat,warnings:W,flexLen,flexM};
 }
 function mode(arr){const c={};arr.forEach(x=>c[x]=(c[x]||0)+1);return +Object.keys(c).sort((a,b)=>c[b]-c[a]||b-a)[0]}
 function defaultDiffuser(side,dia){const L=itemsOf('diffuser');const by=a=>a.sort((x,y)=>x.price-y.price)[0];const okD=d=>!+dia||!+d.diameter||+d.diameter===+dia;
@@ -979,6 +1088,7 @@ function renderSide(){
     h+=`<h2>${esc(t('s1'))}</h2><p class="hint">${esc(t('plan_hint'))}</p><h3>${esc(t('floors'))}</h3>`;
     state.floors.forEach(fl=>{h+=`<div class="card floorRow ${fl.id===ui.floorId?'on':''}"><div class="nm" data-act="floor" data-id="${fl.id}">${esc(floorName(fl))}<div class="st">${fl.imageId?'<span class="tag ok">'+esc(t('plan_ok'))+'</span>':'<span class="tag">'+esc(t('plan_none'))+'</span>'}</div></div>
       <button class="btn sm" data-act="uploadFor" data-id="${fl.id}">${esc(fl.imageId?t('replace_plan'):t('upload_plan'))}</button>
+      ${fl.imageId?`<button class="btn sm" data-act="editPlan" data-id="${fl.id}" title="${esc(t('edit_plan'))}">⟳</button>`:''}
       <button class="btn sm" data-act="renameFloor" data-id="${fl.id}" title="${esc(t('rename'))}">✎</button>
       ${state.floors.length>1?`<button class="btn sm danger" data-act="delFloor" data-id="${fl.id}" title="${esc(t('del'))}">✕</button>`:''}</div>`});
     h+=`<button class="btn wide" data-act="addFloor" style="margin-top:6px">${esc(t('add_floor'))}</button>`;
@@ -992,9 +1102,11 @@ function renderSide(){
       <div style="display:flex;gap:8px;align-items:center"><button class="btn ${tool==='scale'?'on':''}" data-act="tool" data-t="scale">📏 ${esc(t('scale_btn'))}</button>
       ${f.scale?`<span class="tag ok">${esc(t('scale_ok',{m:f1(f.scale.meters)}))}</span>`:`<span class="tag warn">${esc(t('scale_none'))}</span>`}</div>
       <h3>${esc(t('area_t'))}</h3><p class="hint">${esc(t('area_hint'))}</p>
-      <button class="btn ${tool==='area'?'on':''}" data-act="tool" data-t="area">⬠ ${esc(t('area_btn'))}</button>`;
-    f.areas.forEach((a,i)=>{h+=`<div class="card" style="display:flex;align-items:center;gap:8px;padding:6px 10px"><span>${esc(t('contour',{n:i+1}))}</span><b style="margin-left:auto">${ppm?f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'):'—'}</b><button class="btn sm danger" data-act="delArea" data-id="${a.id}">✕</button></div>`});
+      <div class="grid2">${toolBtn('area',t('area_btn'),'<span class="sw" style="background:#10b981"></span>')}${toolBtn('house',t('house_btn'),`<span class="sw" style="background:${HOUSE_COL}"></span>`)}</div>`;
+    const cn={vent:0,house:0};
+    f.areas.forEach(a=>{const hs=isHouse(a);const n=++cn[hs?'house':'vent'];h+=`<div class="card" style="display:flex;align-items:center;gap:8px;padding:6px 10px"><span class="sw" style="background:${hs?HOUSE_COL:'#10b981'}"></span><span>${esc(t(hs?'house_contour':'contour',{n}))}</span><b style="margin-left:auto${hs?';font-weight:500;color:var(--mut)':''}">${ppm?f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'):'—'}</b><button class="btn sm danger" data-act="delArea" data-id="${a.id}">✕</button></div>`});
     h+=`<label class="fld"><span>${esc(t('area_total'))}</span><b>${c.areaAuto>0?f1(c.areaAuto)+' '+t('m2'):'—'}</b></label>
+      ${c.houseArea>0?`<label class="fld"><span>${esc(t('house_total'))}</span><span class="mut">${f1(c.houseArea)} ${t('m2')}</span></label>`:''}
       <label class="fld"><span>${esc(t('area_manual'))}</span><input type="text" inputmode="decimal" data-bind="areaManual" value="${esc(state.areaManual)}"></label>
       <label class="fld"><span>${esc(t('height'))}</span><input type="text" inputmode="decimal" data-bind="height" value="${esc(state.height)}"></label>`;
     h+=`<div id="sumBox">${summaryHTML(c)}</div>`;
@@ -1071,7 +1183,9 @@ function renderProps(){
       <div class="row"><span>${esc(t('length'))}</span><b>${len?f1(len)+' '+t('mm'):'—'}</b></div><div class="row"><span>${esc(t('elbows'))}</span><b>${turns(routePts(r))}</b></div>`}
     h+=del;
   } else if(selected.kind==='area'){const f=state.floors.find(f=>f.areas.some(a=>a.id===selected.id));const a=f&&f.areas.find(a=>a.id===selected.id);if(!a){selected=null;el.innerHTML='';return}
-    const ppm=pxPerM(f);h=`<h4>⬠ ${esc(t('area'))}</h4><div class="row"><span>${esc(t('area'))}</span><b>${ppm?f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'):'—'}</b></div>`+del}
+    const ppm=pxPerM(f);h=`<h4><span class="sw" style="background:${isHouse(a)?HOUSE_COL:'#10b981'}"></span>${esc(t(isHouse(a)?'house_btn':'area_btn'))}</h4>
+      <div class="row"><span>${esc(t('contour_type'))}</span><div class="seg">${['vent','house'].map(kd=>`<button data-act="areaKind" data-kd="${kd}" class="${(isHouse(a)?'house':'vent')===kd?'on':''}">${esc(t('kind_'+kd))}</button>`).join('')}</div></div>
+      <div class="row"><span>${esc(t('area'))}</span><b>${ppm?f1(polyArea(a.pts)/ppm/ppm)+' '+t('m2'):'—'}</b></div>`+del}
   el.innerHTML=h;
 }
 
@@ -1191,7 +1305,7 @@ async function makePDF(){
 
 // ---------------------------------------------------------------- actions
 const ACT={
-  step:b=>{const prev=ui.step;ui.step=+b.dataset.s;const allowed={2:['scale','area'],3:['recup'],4:['recup','col_supply','col_extract','diff_supply','diff_extract','riser','flex','rigid']};
+  step:b=>{const prev=ui.step;ui.step=+b.dataset.s;const allowed={2:['scale','area','house'],3:['recup'],4:['recup','col_supply','col_extract','diff_supply','diff_extract','riser','flex','rigid']};
     if(!(allowed[ui.step]||[]).includes(tool))tool='select';draft=null;if(ui.step===5)selected=null;setTool(tool);renderAll();if(prev===5&&ui.step<5)requestAnimationFrame(fitView)},
   floor:b=>{ui.floorId=b.dataset.id;selected=null;draft=null;renderAll();requestAnimationFrame(fitView)},
   upload:()=>{$('#fileIn').click()},
@@ -1209,6 +1323,8 @@ const ACT={
   pickRecup:b=>{snap();state.recupId=b.dataset.id;syncRigidD();if(!recupObj()&&curImg())setTool('recup');changed()},
   recGroup:b=>{ui.recupGroup=b.dataset.g;renderSide()},
   delArea:b=>{snap();state.floors.forEach(f=>f.areas=f.areas.filter(a=>a.id!==b.dataset.id));changed()},
+  areaKind:b=>{let a;state.floors.forEach(f=>f.areas.forEach(x=>{if(x.id===selected.id)a=x}));if(!a||(isHouse(a)?'house':'vent')===b.dataset.kd)return;snap();if(b.dataset.kd==='house')a.kind='house';else delete a.kind;changed()},
+  editPlan:b=>editFloorPlan(state.floors.find(x=>x.id===b.dataset.id)),
   delSel:()=>deleteSelected(),
   rotSel:()=>rotateSelected(),
   diffSide:b=>{const o=objById(selected.id);if(o.side===b.dataset.s)return;if(state.routes.some(r=>r.to===o.id)){toast(t('err_has_routes'),true);return}snap();o.side=b.dataset.s;o.itemId=null;changed()},
